@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Credit - InApp Credit Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="apple-touch-icon" sizes="180x180" href="./assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-16x16.png">
+  <link rel="manifest" href="./assets/site.webmanifest">
+  <script type="module" crossorigin src="./assets/js/main.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/css/main.css">
+</head>
+
+<body>
+  <div id="overlay" class="overlay"></div>
+  <!-- TOPBAR -->
+  <nav id="topbar" class="navbar bg-white border-bottom fixed-top topbar px-3">
+
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="sidebar">
+     <div class="logo-area">
+      <a href="index.html" class="d-inline-flex lh-sm">
+        <span class="fw-bold fs-5 text-primary">Esprit Wallet</span>
+      </a>
+    </div>
+    <ul class="nav flex-column">
+      <li class="px-4 py-2"><small class="nav-text">Main</small></li>
+      <li><a class="nav-link" href="credit.html"><i class="ti ti-box-seam"></i><span
+        class="nav-text">Credit</span></a></li>
+      <li><a class="nav-link" href="create-demande.html"><i class="ti ti-plus"></i><span class="nav-text">Ajouter
+        demande</span></a></li>
+
+  <li><a class="nav-link" href="signin.html"><i class="ti ti-logout"></i><span class="nav-text">Log out</span></a></li>
+    </ul>
+
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main id="content" class="content py-10">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          {% if successMessage %}
+          <div class="alert alert-success" role="alert">
+            {{ successMessage }}
+          </div>
+          {% endif %}
+
+          {% if errorMessage %}
+          <div class="alert alert-danger" role="alert">
+            {{ errorMessage }}
+          </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="">
+              <h1 class="fs-3 mb-1">Credit</h1>
+              <p class="mb-0">Consulter vos demandes de credit</p>
+            </div>
+            <div>
+              <a href="create-demande.html" class="btn btn-primary">Ajouter demande</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <div class="card table-responsive ">
+            <table class="table mb-0 text-nowrap table-hover">
+              <thead class="table-light border-light">
+                <tr>
+                  <th>Montant</th>
+                  <th>Mensualite</th>
+                  <th>Duree</th>
+                  <th>Statut</th>
+                  <th>Date Demande</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in creditRows %}
+                <tr class="align-middle">
+                  <td>{{ row.montant_demande is not null ? row.montant_demande|number_format(2, '.', ' ') ~ ' DT' : '-' }}</td>
+                  <td>{{ row.montant_mensuel is not null ? row.montant_mensuel|number_format(2, '.', ' ') ~ ' DT' : '-' }}</td>
+                  <td>{{ row.duree_mois is not null ? row.duree_mois ~ ' mois' : '-' }}</td>
+                  <td>{{ row.status ?? '-' }}</td>
+                  <td>{{ row.date_demande is not null ? row.date_demande|date('Y-m-d H:i') : '-' }}</td>
+                  <td class="d-flex align-items-center gap-2">
+                    <a href="{{ path('app_edit_demande', {'id': row.id_dossier}) }}" class=""><i class="ti ti-edit "></i></a>
+                    <form method="post" action="{{ path('app_delete_demande', {'id': row.id_dossier}) }}" onsubmit="return confirm('Confirmer la suppression de cette demande ?');" class="m-0">
+                      <button type="submit" class="btn p-0 border-0 bg-transparent link-danger" aria-label="Supprimer">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="6" class="text-center py-4">Vous n'avez pas d'un demande du crédit.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+
+        </div>
+
+      </div>
+    <div class="row">
+        <div class="col-12">
+<footer class="text-center py-2 mt-6 text-white">
+  <p class="mb-0 text-white">Copyright © 2026 InApp Credit Dashboard. Developed by <a href="https://codescandy.com/" target="_blank" class="text-white">CodesCandy</a> • Distributed by <a href="https://themewagon.com/" target="_blank" class="text-white">ThemeWagon</a> </p>
+      </footer>
+        </div>
+
+      </div>
+
+
+
+
+    </div>
+  </main>
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Bootstrap JS -->
+
+
+
+</body>
+
+</html>
+
+
+
+
