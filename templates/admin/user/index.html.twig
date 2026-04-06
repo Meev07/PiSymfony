@@ -1,0 +1,88 @@
+{% extends 'admin_layout.html.twig' %}
+
+{% block title %}User Management | ESPRIT ADMIN{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">User Directory</li>
+{% endblock %}
+
+{% block body %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h6 class="mb-0 font-weight-bold text-primary">Member Management</h6>
+            </div>
+            <div class="col-md-5">
+                <form action="{{ path('app_admin_user_index') }}" method="GET" class="d-flex">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control form-control-sm" placeholder="Search by ID, Name or Email..." value="{{ searchTerm|default('') }}">
+                        <button class="btn btn-primary btn-sm" type="submit">
+                            <i class="fa-solid fa-search"></i>
+                        </button>
+                        {% if searchTerm|default('') %}
+                            <a href="{{ path('app_admin_user_index') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-3 text-end">
+                <a href="{{ path('app_admin_user_new') }}" class="btn btn-success btn-sm px-3">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Add New
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th class="text-end">Card Balance</th>
+                        <th class="text-center">Roles</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td class="ps-4 font-monospace">{{ user.id }}</td>
+                        <td class="fw-bold">{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td class="text-end">
+                            <span class="text-success fw-bold">{{ user.balance|number_format(3) }} TND</span>
+                        </td>
+                        <td class="text-center">
+                            {% for role in user.roles %}
+                                <span class="badge {% if role == 'ROLE_ADMIN' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ role|replace({'ROLE_': ''}) }}
+                                </span>
+                            {% endfor %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a href="{{ path('app_admin_user_show', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary" title="View"><i class="fa-solid fa-eye"></i></a>
+                                <a href="{{ path('app_admin_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                                {% if user != app.user %}
+                                    <form method="post" action="{{ path('app_admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Delete this user?');" style="display:inline-block">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                        <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center py-4">No users found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

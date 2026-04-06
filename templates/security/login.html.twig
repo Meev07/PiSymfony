@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Log in | Modern Auth{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="container d-flex align-items-center justify-content-center min-vh-100 p-3 auth-body">
+    <div class="auth-card p-5 w-100">
+        <header class="auth-header text-center mb-5">
+            <h1 class="h2 mb-2 font-weight-bold">Log in</h1>
+            <p class="text-muted small">Access your Esprit Banking account</p>
+        </header>
+
+        {% if error %}
+            <div class="alert alert-danger border-0 rounded-3 small p-3 mb-4">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+        
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success border-0 rounded-3 small p-3 mb-4">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <form method="post">
+            <div class="form-group mb-4">
+                <label for="inputEmail" class="text-muted">Email</label>
+                <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control-auth" autocomplete="email" required autofocus placeholder="example@email.com">
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="inputPassword" class="text-muted">Password</label>
+                <input type="password" name="password" id="inputPassword" class="form-control-auth" autocomplete="current-password" required placeholder="Enter password">
+            </div>
+
+            <div class="text-end mb-4">
+                <a href="{{ path('app_forgot_password') }}" class="auth-link small">Forgot your password?</a>
+            </div>
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button class="btn btn-auth-submit" type="submit">Login</button>
+        </form>
+
+        <footer class="text-center mt-5 pt-3">
+            <p class="auth-footer-text mb-0">Don't have account? <a href="{{ path('app_signup') }}" class="auth-link">Sign up</a></p>
+        </footer>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Verify OTP | Modern Auth{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="container d-flex align-items-center justify-content-center min-vh-100 p-3 auth-body">
+    <div class="auth-card p-5 w-100" style="max-width: 450px;">
+        <header class="auth-header text-center mb-4">
+            <h1 class="h2 mb-2 font-weight-bold">Two-Factor Authentication</h1>
+            <p class="text-muted small">We've sent a 6-digit code to your email. Please enter it below to proceed to your dashboard.</p>
+        </header>
+
+        {% if app.session.get('dev_otp_code') %}
+            <div class="alert alert-info border-0 rounded-4 p-3 mb-4 shadow-sm small text-center">
+                <i class="fa-solid fa-bug me-2"></i> <strong>DEV ONLY:</strong> Your code is <code>{{ app.session.get('dev_otp_code') }}</code>
+            </div>
+        {% endif %}
+
+        {% for message in app.flashes('danger') %}
+            <div class="alert alert-danger border-0 rounded-4 p-3 mb-4 shadow-sm small">
+                <i class="fa-solid fa-circle-exclamation me-2"></i> {{ message }}
+            </div>
+        {% endfor %}
+
+        <form method="post">
+            <div class="form-group mb-5">
+                <label for="inputOTP" class="text-muted">6-Digit Code</label>
+                <input type="text" name="otp" id="inputOTP" class="form-control-auth text-center" maxlength="6" pattern="\d{6}" required autofocus placeholder="123456" style="letter-spacing: 0.5rem; font-size: 1.5rem;">
+            </div>
+
+            <button class="btn btn-auth-submit" type="submit">Verify & Login</button>
+        </form>
+
+        <footer class="text-center mt-5 pt-3">
+            <p class="auth-footer-text mb-0">Wait, I didn't receive it? <a href="{{ path('app_logout') }}" class="auth-link text-danger">Logout and retry</a></p>
+        </footer>
+    </div>
+</div>
+{% endblock %}

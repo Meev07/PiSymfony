@@ -1,0 +1,101 @@
+{% extends 'admin_layout.html.twig' %}
+
+{% block title %}My Banking Profile | ESPRIT BANK{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <!-- Profile Card -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4 border-0 overflow-hidden">
+            <div class="card-header py-4 bg-white text-center border-0">
+                <div class="mb-3 position-relative d-inline-block">
+                    {% if user.profileImage %}
+                        <img src="{{ asset('uploads/profiles/' ~ user.profileImage) }}" class="rounded-circle border shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
+                    {% else %}
+                        <i class="fa-solid fa-circle-user text-primary" style="font-size: 5rem;"></i>
+                    {% endif %}
+                    
+                    <form action="{{ path('app_dashboard') }}" method="post" enctype="multipart/form-data" class="position-absolute bottom-0 end-0">
+                        <label for="profile_image_input" class="btn btn-sm btn-primary rounded-circle shadow-sm p-2" title="Update Profile Photo" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                        <input type="file" name="profile_image" id="profile_image_input" class="d-none" onchange="this.form.submit()" accept="image/*">
+                    </form>
+                </div>
+                <h4 class="fw-bold text-dark mb-1">{{ user.name }}</h4>
+                <p class="text-muted small mb-3">{{ user.email }}</p>
+                <div class="d-flex justify-content-center gap-2">
+                    {% for role in user.roles %}
+                        <span class="badge {% if role == 'ROLE_ADMIN' %}bg-primary{% else %}bg-secondary{% endif %}">
+                            <i class="fa-solid fa-shield-halved me-1 small"></i> {{ role|replace({'ROLE_': ''}) }}
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-body bg-light border-top p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold">Liquidity Assets</span>
+                    <span class="text-success h5 mb-0 fw-bold">{{ user.balance|number_format(3) }} TND</span>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4 border-0">
+            <div class="card-header py-3 bg-white d-flex flex-row align-items-center justify-content-between border-0">
+                <h6 class="m-0 font-weight-bold text-primary">Member Account Specifications</h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">
+                    <i class="fa-solid fa-fingerprint me-1"></i> Verified Account
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted d-block text-uppercase mb-1">Authorized Name</label>
+                        <div class="p-3 bg-light rounded border-start border-primary border-4">
+                            <p class="h6 mb-0 fw-bold">{{ user.name }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted d-block text-uppercase mb-1">Enterprise Email</label>
+                        <div class="p-3 bg-light rounded">
+                            <p class="h6 mb-0">{{ user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted d-block text-uppercase mb-1">Security ID</label>
+                        <div class="p-3 bg-light rounded">
+                            <p class="h6 mb-0 font-monospace">{{ user.id }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted d-block text-uppercase mb-1">Network Status</label>
+                        <div class="p-3 bg-light rounded">
+                            <p class="h6 mb-0 text-primary">
+                                <i class="fa-solid fa-circle-check me-1"></i> Active Synchronization
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 shadow-sm rounded-4 p-4 mb-0 d-flex align-items-start">
+                    <i class="fa-solid fa-circle-info fs-4 me-3 mt-1"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Security Protocol Active</h6>
+                        <p class="mb-0 small opacity-75">Your banking profile is currently synchronized with the ESPRIT main node. All assets are secured with institution-grade multi-layer protection.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+/* Corporate Pro - High-Trust Banking Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Nunito:wght@400;600;700&display=swap');
+
+:root {
+    --primary: #4e73df;
+    --primary-dark: #2e59d9;
+    --navy: #1a202e;
+    --bg-body: #f8f9fc;
+    --white: #ffffff;
+    --gray-100: #f8f9fc;
+    --gray-200: #eaecf4;
+    --gray-300: #dddfeb;
+    --gray-600: #858796;
+    --gray-800: #5a5c69;
+    --text-main: #2e384d;
+    --text-muted: #858796;
+    --success: #1cc88a;
+    --sidebar-width: 260px;
+    --shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+    --transition: all 0.2s ease-in-out;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+}
+
+/* Professional Components */
+.card-pro {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+.sidebar-solid {
+    background: var(--navy);
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+/* Sidebar Nav */
+.nav-link-pro {
+    color: rgba(255, 255, 255, 0.7);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: var(--transition);
+    border-left: 4px solid transparent;
+}
+
+.nav-link-pro:hover {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link-pro.active {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: var(--primary);
+}
+
+/* Header */
+.header-solid {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+/* Login Page Corporate */
+.login-split-pro {
+    display: flex;
+    min-height: 100vh;
+}
+
+.login-form-pane {
+    flex: 0 0 500px;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+    z-index: 10;
+}
+
+.login-visual-pane {
+    flex: 1;
+    position: relative;
+}
+
+.login-overlay-blue {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(78, 115, 223, 0.4), rgba(26, 32, 46, 0.7));
+}
+
+/* Dashboard Metrics */
+.metric-border-primary { border-left: 4px solid var(--primary) !important; }
+.metric-border-success { border-left: 4px solid var(--success) !important; }
+
+.metric-label {
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--primary);
+}
+
+.metric-value {
+    font-weight: 700;
+    color: var(--gray-800);
+}
+
+.btn-pro {
+    font-weight: 600;
+    border-radius: 0.35rem;
+    padding: 0.5rem 1.5rem;
+    transition: var(--transition);
+}

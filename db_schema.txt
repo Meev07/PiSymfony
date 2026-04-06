@@ -1,0 +1,18 @@
+--- USERS TABLE ---
+Field: id_user | Type: int(11)
+Field: first_name | Type: varchar(100)
+Field: last_name | Type: varchar(100)
+Field: email | Type: varchar(255)
+Field: password_hash | Type: varchar(255)
+Field: phone | Type: varchar(20)
+Field: role | Type: enum('USER','ADMIN')
+Field: profile_image | Type: varchar(500)
+Field: email_verified | Type: tinyint(1)
+Field: two_factor_enabled | Type: tinyint(1)
+Field: face_model_path | Type: varchar(255)
+Field: account_status | Type: enum('ACTIVE','SUSPENDED')
+Field: revenu | Type: double
+Field: bank_id | Type: int(11)
+Field: iban | Type: varchar(34)
+Field: balance | Type: decimal(15,2)
+Field: created_at | Type: datetime

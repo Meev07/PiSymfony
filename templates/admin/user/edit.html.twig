@@ -1,0 +1,60 @@
+{% extends 'admin_layout.html.twig' %}
+
+{% block title %}Modify User | ESPRIT ADMIN{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{{ path('app_admin_user_index') }}" class="text-decoration-none">User Directory</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Modify User</li>
+{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Modify Member Access</h6>
+            </div>
+            <div class="card-body p-4">
+                {{ form_start(form) }}
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Full Name</label>
+                        {{ form_widget(form.name, {'attr': {'class': 'form-control', 'placeholder': 'Protocol Full Name'}}) }}
+                        <div class="text-danger small mt-1">{{ form_errors(form.name) }}</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Enterprise Email</label>
+                        {{ form_widget(form.email, {'attr': {'class': 'form-control', 'placeholder': 'name@esprit.tn'}}) }}
+                        <div class="text-danger small mt-1">{{ form_errors(form.email) }}</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Liquidity Assets (TND)</label>
+                        {{ form_widget(form.balance, {'attr': {'class': 'form-control', 'placeholder': '0.000', 'step': '0.001'}}) }}
+                        <small class="text-muted opacity-75">Update the authorized node liquidity balance.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Network Access Roles</label>
+                        <div class="bg-light p-3 rounded">
+                            {{ form_widget(form.roles) }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Security Key (Password)</label>
+                        {{ form_widget(form.plainPassword, {'attr': {'class': 'form-control', 'placeholder': 'Leave blank to keep current'}}) }}
+                        <div class="text-danger small mt-1">{{ form_errors(form.plainPassword) }}</div>
+                        <small class="text-muted small">Only enter a value if you wish to change the current key.</small>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button class="btn btn-primary py-2 fw-bold">Synchronize Protocol</button>
+                        <a href="{{ path('app_admin_user_index') }}" class="btn btn-light small">Cancel and Return</a>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

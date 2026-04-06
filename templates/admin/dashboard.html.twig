@@ -1,0 +1,121 @@
+{% extends 'admin_layout.html.twig' %}
+
+{% block title %}Dashboard | ESPRIT ADMIN{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">Admin Dashboard</li>
+{% endblock %}
+
+{% block body %}
+<div class="row g-4 mb-4">
+    <!-- Total Users -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-start border-4 border-primary h-100 py-2">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 small uppercase fw-bold">Total Members</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ totalUsers }} Authorized</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Liquidity -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-start border-4 border-success h-100 py-2">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1 small uppercase fw-bold">Total Liquidity</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ totalBalance|number_format(3) }} TND</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Status -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-start border-4 border-info h-100 py-2">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1 small uppercase fw-bold">Network Status</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">100% Synchronized</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-satellite fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Protocols -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-start border-4 border-warning h-100 py-2">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 small uppercase fw-bold">Security Protocols</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">98.4% Compliant</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shield-halved fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Recent Member Synchronizations</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 text-center">ID</th>
+                        <th>Authorized Name</th>
+                        <th class="text-end pe-4">Card Assets</th>
+                        <th class="text-center">Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for user in latestUsers|default([]) %}
+                    <tr>
+                        <td class="ps-4 text-center font-monospace">{{ user.id }}</td>
+                        <td class="fw-bold">{{ user.name }}</td>
+                        <td class="text-end pe-4">
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold p-2 px-3 border border-success border-opacity-25">
+                                {{ user.balance|number_format(3) }} TND
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {% for role in user.roles %}
+                                <span class="badge {% if role == 'ROLE_ADMIN' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ role|replace({'ROLE_': ''}) }}
+                                </span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center py-4 text-muted border-top">No members synchronized yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

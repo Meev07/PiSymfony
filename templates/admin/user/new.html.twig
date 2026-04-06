@@ -1,0 +1,59 @@
+{% extends 'admin_layout.html.twig' %}
+
+{% block title %}Add New User | ESPRIT ADMIN{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{{ path('app_admin_user_index') }}" class="text-decoration-none">User Directory</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Add New User</li>
+{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">New Member Authorization</h6>
+            </div>
+            <div class="card-body p-4">
+                {{ form_start(form) }}
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Full Name</label>
+                        {{ form_widget(form.name, {'attr': {'class': 'form-control', 'placeholder': 'Protocol Full Name'}}) }}
+                        <div class="text-danger small mt-1">{{ form_errors(form.name) }}</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Enterprise Email</label>
+                        {{ form_widget(form.email, {'attr': {'class': 'form-control', 'placeholder': 'name@esprit.tn'}}) }}
+                        <div class="text-danger small mt-1">{{ form_errors(form.email) }}</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Liquidity Assets (TND)</label>
+                        {{ form_widget(form.balance, {'attr': {'class': 'form-control', 'placeholder': '0.000', 'step': '0.001'}}) }}
+                        <small class="text-muted opacity-75">Local currency balance for this authorized node.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Network Access Roles</label>
+                        <div class="bg-light p-3 rounded">
+                            {{ form_widget(form.roles) }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Security Key (Password)</label>
+                        {{ form_widget(form.plainPassword, {'attr': {'class': 'form-control', 'placeholder': 'Enter secure key'}}) }}
+                        <div class="text-danger small mt-1">{{ form_errors(form.plainPassword) }}</div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button class="btn btn-primary py-2 fw-bold">Authorize Node</button>
+                        <a href="{{ path('app_admin_user_index') }}" class="btn btn-light small">Cancel Synchronization</a>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
