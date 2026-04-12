@@ -1,0 +1,384 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Settings - Esprit Wallet{% endblock %}
+
+{% block breadcrumb %}
+    <span class="text-slate-400">Personal</span> / Settings
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Modern Header -->
+    <div class="flex items-end justify-between border-b pb-8">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tight">Account Settings</h1>
+            <p class="text-slate-500 mt-2 text-lg">Manage your identity, security protocols, and biometric data.</p>
+        </div>
+        <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+            <i class="fa-solid fa-shield-check"></i>
+            Account Secured
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <!-- Persistent Profile Sidebar -->
+        <div class="lg:col-span-4 space-y-8">
+            <div class="sticky top-24">
+                <div class="bg-white rounded-[32px] shadow-sm border p-8 text-center relative overflow-hidden group">
+                    <!-- Background Decor -->
+                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+                    
+                    <div class="relative inline-block mb-6">
+                        {% if user.profileImage %}
+                            <img src="{{ asset('uploads/profiles/' ~ user.profileImage) }}" class="w-40 h-40 rounded-full border-8 border-slate-50 object-cover shadow-2xl mx-auto transform transition duration-500 group-hover:scale-105">
+                        {% else %}
+                            <div class="w-40 h-40 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-5xl font-black shadow-2xl mx-auto transform transition duration-500 group-hover:scale-105">
+                                {{ user.firstName|first }}{{ user.lastName|first }}
+                            </div>
+                        {% endif %}
+                        <label for="profile_photo_input" class="absolute bottom-1 right-2 bg-white w-12 h-12 rounded-full shadow-xl border-4 border-slate-50 flex items-center justify-center cursor-pointer hover:bg-primary hover:text-white transition-all transform hover:rotate-12">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                    </div>
+                <form action="{{ path('app_profile_settings') }}" method="POST" enctype="multipart/form-data" id="photo_form">
+                    <input type="hidden" name="action" value="upload_photo">
+                    <input type="file" name="profile_photo" id="profile_photo_input" class="hidden" onchange="document.getElementById('photo_form').submit()">
+                </form>
+
+                    <h2 class="text-2xl font-black text-slate-800 tracking-tight">{{ user.fullName }}</h2>
+                    <p class="text-slate-400 font-medium mb-8">{{ user.email }}</p>
+
+                    <div class="grid grid-cols-2 gap-4 pt-8 border-t">
+                        <div class="text-left p-4 bg-slate-50 rounded-2xl">
+                            <p class="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Joined</p>
+                            <p class="font-bold text-slate-700">{{ user.createdAt|date('M Y') }}</p>
+                        </div>
+                        <div class="text-left p-4 bg-slate-50 rounded-2xl">
+                            <p class="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Wallet ID</p>
+                            <p class="font-bold text-slate-700">{{ "%04d"|format(user.id) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Help Card -->
+                <div class="mt-8 bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h4 class="font-bold text-lg mb-2">Need Help?</h4>
+                        <p class="text-white/60 text-sm leading-relaxed mb-6">Our security team is available 24/7 for any account concerns.</p>
+                        <a href="{{ path('app_complaint_index') }}" class="inline-flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all">
+                            Contact Support <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <i class="fa-solid fa-headset absolute -bottom-4 -right-4 text-8xl text-white/5 transform -rotate-12"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Settings Area -->
+        <div class="lg:col-span-8 space-y-12">
+            
+            <!-- Section: Identity -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-4 px-2">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-id-card text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-800">Personal Profile</h2>
+                        <p class="text-sm text-slate-400">Your information used throughout the wallet platform.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[32px] shadow-sm border p-10">
+                    {{ form_start(infoForm, {'attr': {'novalidate': 'novalidate', 'class': 'grid grid-cols-1 md:grid-cols-2 gap-8'}}) }}
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">First Name</label>
+                                {% if not infoForm.firstName.vars.valid %} <span class="text-[10px] text-red-500 font-black uppercase">Invalid</span> {% endif %}
+                            </div>
+                            {{ form_widget(infoForm.firstName, {'attr': {'data-live-validation-required-value': 'true', 'class': 'w-full px-5 py-4 rounded-2xl border bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 transition'}}) }}
+                            <div class="live-error-msg text-red-500 text-[10px] font-black uppercase tracking-wider px-1"></div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Last Name</label>
+                                {% if not infoForm.lastName.vars.valid %} <span class="text-[10px] text-red-500 font-black uppercase">Invalid</span> {% endif %}
+                            </div>
+                            {{ form_widget(infoForm.lastName, {'attr': {'data-live-validation-required-value': 'true', 'class': 'w-full px-5 py-4 rounded-2xl border bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 transition'}}) }}
+                            <div class="live-error-msg text-red-500 text-[10px] font-black uppercase tracking-wider px-1"></div>
+                        </div>
+
+                        <div class="md:col-span-2 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Email Address</label>
+                                {% if not infoForm.email.vars.valid %} <span class="text-[10px] text-red-500 font-black uppercase">Invalid</span> {% endif %}
+                            </div>
+                            {{ form_widget(infoForm.email, {'attr': {'data-live-validation-required-value': 'true', 'class': 'w-full px-5 py-4 rounded-2xl border bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 transition'}}) }}
+                            <div class="live-error-msg text-red-500 text-[10px] font-black uppercase tracking-wider px-1"></div>
+                        </div>
+
+                        <div class="md:col-span-2 pt-4">
+                            <button type="submit" class="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-800 transition shadow-xl shadow-slate-200 active:scale-95">
+                                Save Profile Changes
+                            </button>
+                        </div>
+                    {{ form_end(infoForm) }}
+                </div>
+            </section>
+
+            <!-- Section: Security Center (Aggregated) -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-4 px-2">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-vault text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-800">Security Center</h2>
+                        <p class="text-sm text-slate-400">Please select your preferred advanced authentication method. <span class="text-rose-500 font-bold">(Note: Only one method can be active at a time)</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 2FA Toggle -->
+                    <div class="bg-white p-8 rounded-[32px] border shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mb-6">
+                                <i class="fa-solid fa-envelope-open-text text-xl"></i>
+                            </div>
+                            <h4 class="text-lg font-black text-slate-800 mb-2">Email Authentication</h4>
+                            <p class="text-xs text-slate-400 leading-relaxed mb-8">Receive a unique one-time code on your registered email whenever you log in.</p>
+                        </div>
+                        <form action="{{ path('app_profile_settings') }}" method="POST">
+                            <input type="hidden" name="action" value="toggle_2fa">
+                            <button type="submit" class="w-full py-4 rounded-2xl border-2 {{ user.is2faEnabled ? 'border-red-100 text-red-600 bg-red-50 hover:bg-red-100' : 'border-primary/10 text-primary bg-primary/5 hover:bg-primary/10' }} transition font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3">
+                                <i class="fa-solid {{ user.is2faEnabled ? 'fa-toggle-on' : 'fa-toggle-off' }} text-lg"></i>
+                                {{ user.is2faEnabled ? 'Disable 2FA' : 'Enable 2FA' }}
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Face ID Toggle -->
+                    <div class="bg-white p-8 rounded-[32px] border shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                                <i class="fa-solid fa-face-viewfinder text-xl"></i>
+                            </div>
+                            <h4 class="text-lg font-black text-slate-800 mb-2">Face Biometrics</h4>
+                            <p class="text-xs text-slate-400 leading-relaxed mb-8">The most seamless security. Log in instantly using our neural face recognition.</p>
+                        </div>
+                        <div class="space-y-4">
+                            {% if user.faceIdDescriptor %}
+                                <button onclick="toggleFaceId()" id="faceIdToggleBtn" class="w-full py-4 rounded-2xl border-2 {{ user.isFaceIdEnabled ? 'border-red-100 text-red-600 bg-red-50 hover:bg-red-100' : 'border-purple-100 text-purple-600 bg-purple-50 hover:bg-purple-100' }} transition font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3">
+                                    <i class="fa-solid {{ user.isFaceIdEnabled ? 'fa-toggle-on' : 'fa-toggle-off' }} text-lg"></i>
+                                    {{ user.isFaceIdEnabled ? 'Disable Face ID' : 'Enable Face ID' }}
+                                </button>
+                                <button onclick="openFaceIdModal()" class="w-full text-[10px] font-black uppercase text-slate-400 hover:text-primary transition tracking-widest text-center">
+                                    Update face signature
+                                </button>
+                            {% else %}
+                                <button onclick="openFaceIdModal()" class="w-full py-4 rounded-2xl bg-purple-600 text-white hover:bg-purple-700 transition font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-purple-100">
+                                    <i class="fa-solid fa-camera"></i>
+                                    Register Face ID
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Change Block -->
+                <div class="bg-white rounded-[32px] shadow-sm border p-10">
+                    <h4 class="text-lg font-black text-slate-800 mb-8 border-b pb-4">Update Password</h4>
+                    {{ form_start(passwordForm, {'attr': {'novalidate': 'novalidate', 'class': 'space-y-8'}}) }}
+                        
+                        <div class="space-y-3">
+                            <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</label>
+                            {{ form_widget(passwordForm.currentPassword, {'attr': {'data-live-validation-required-value': 'true', 'class': 'w-full px-5 py-4 rounded-2xl border bg-slate-50 focus:bg-white focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition'}}) }}
+                            {% if not passwordForm.currentPassword.vars.valid %} <p class="text-[10px] text-red-500 font-black uppercase px-1 mt-1">Incorrect Password</p> {% endif %}
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="space-y-3">
+                                <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
+                                {{ form_widget(passwordForm.newPassword.first, {'attr': {'data-live-validation-min-value': '8', 'class': 'w-full px-5 py-4 rounded-2xl border bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition'}}) }}
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Confirm New Password</label>
+                                {{ form_widget(passwordForm.newPassword.second, {'attr': {'data-live-validation-required-value': 'true', 'class': 'w-full px-5 py-4 rounded-2xl border bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition'}}) }}
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" class="px-10 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-50 transition active:scale-95 shadow-sm">
+                                Change Password
+                            </button>
+                        </div>
+                    {{ form_end(passwordForm) }}
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- Face ID Registration Modal -->
+<div id="faceIdModal" class="fixed inset-0 z-[2000] flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onclick="closeFaceIdModal()"></div>
+    <div class="bg-white w-full max-w-lg rounded-[48px] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-500">
+        <div class="p-10 text-center border-b bg-slate-50 relative">
+            <button onclick="closeFaceIdModal()" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white shadow-sm border flex items-center justify-center text-slate-400 hover:text-slate-800 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="w-20 h-20 bg-purple-100 text-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <i class="fa-solid fa-face-viewfinder text-3xl"></i>
+            </div>
+            <h3 class="text-3xl font-black text-slate-800 tracking-tight">Biometric Scan</h3>
+            <p class="text-slate-500 font-medium mt-2">Center your face in the frame to register</p>
+        </div>
+        
+        <div class="relative bg-black aspect-square flex items-center justify-center">
+            <video id="faceVideo" autoplay muted playsinline class="w-full h-full object-cover grayscale opacity-60"></video>
+            <canvas id="faceCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            
+            <!-- Scanner Visual Overlay -->
+            <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent top-0 animate-bounce transition-all duration-300 pointer-events-none"></div>
+            
+            <div id="faceLoading" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center text-white p-12 text-center z-50 transition-opacity duration-1000">
+                <div class="w-16 h-16 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin mb-6"></div>
+                <p class="font-black uppercase tracking-widest text-sm">Synchronizing AI Models</p>
+                <p class="text-white/40 text-xs mt-3 uppercase font-bold">Encrypted Connection Established</p>
+            </div>
+        </div>
+
+        <div class="p-10 bg-white text-center">
+            <button id="startCaptureBtn" disabled onclick="captureFace()" class="w-full py-5 bg-purple-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs hover:bg-purple-700 transition shadow-2xl shadow-purple-200 disabled:opacity-30 disabled:cursor-not-allowed group">
+                <span class="group-hover:scale-110 transition-transform inline-block">Capture Face Signature</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .live-error-msg ul { list-style: none !important; padding: 0 !important; margin: 0 !important; }
+    .live-error-msg li { margin-top: 5px; }
+</style>
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+        let isModelsLoaded = false;
+        let videoStream = null;
+
+        async function loadModels() {
+            if (isModelsLoaded) return;
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+            
+            try {
+                const loadingEl = document.getElementById('faceLoading');
+                if (loadingEl) loadingEl.innerHTML = '<div class="w-16 h-16 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin mb-6"></div><p class="font-black uppercase tracking-widest text-sm">Downloading AI Weights...</p>';
+
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                isModelsLoaded = true;
+                if (loadingEl) {
+                    loadingEl.style.opacity = '0';
+                    setTimeout(() => loadingEl.style.display = 'none', 500);
+                }
+                const startBtn = document.getElementById('startCaptureBtn');
+                if (startBtn) startBtn.disabled = false;
+            } catch (err) {
+                console.error("Error loading models:", err);
+                const loadingEl = document.getElementById('faceLoading');
+                if (loadingEl) loadingEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i><p class="font-bold text-red-500">Initialization Failed</p><p class="text-xs mt-2 text-white/50">Please refresh the page and try again.</p>';
+            }
+        }
+
+        async function openFaceIdModal() {
+            document.getElementById('faceIdModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            await loadModels();
+            await startCamera();
+        }
+
+        function closeFaceIdModal() {
+            document.getElementById('faceIdModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            stopCamera();
+        }
+
+        async function startCamera() {
+            const video = document.getElementById('faceVideo');
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = videoStream;
+            } catch (err) {
+                alert("Camera access required for biometrics.");
+                closeFaceIdModal();
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+        }
+
+        async function captureFace() {
+            const video = document.getElementById('faceVideo');
+            const btn = document.getElementById('startCaptureBtn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-pulse">ANALYZING FACIAL GEOMETRY...</span>';
+
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection) {
+                alert("Align your face clearly in the center.");
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ path('app_face_id_register') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ descriptor: Array.from(detection.descriptor) })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    btn.innerHTML = 'SUCCESSFULLY ENCRYPTED';
+                    btn.classList.replace('bg-purple-600', 'bg-emerald-600');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    alert(result.error);
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        async function toggleFaceId() {
+            const btn = document.getElementById('faceIdToggleBtn');
+            btn.disabled = true;
+            try {
+                const response = await fetch('{{ path('app_face_id_toggle') }}', { method: 'POST' });
+                const result = await response.json();
+                if (result.enabled !== undefined) location.reload();
+            } catch (err) {
+                btn.disabled = false;
+            }
+        }
+    </script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}ESPRIT WALLET{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🏦</text></svg>">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js" defer></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#0ea5e9',
+                            secondary: '#06b6d4',
+                        }
+                    }
+                }
+            }
+        </script>
+        
+        <style>
+            body { background: #f8fafc; font-family: 'Inter', sans-serif; }
+            .gradient-bg { background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); }
+            .card-shadow { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
+            
+            /* Turbo Progress Bar */
+            .turbo-progress-bar {
+                height: 3px;
+                background-color: #0ea5e9;
+                background-image: linear-gradient(to right, #0ea5e9, #06b6d4);
+            }
+        </style>
+        
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}{% endblock %}
+        {% set frankenphpHotReload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
+        {% if frankenphpHotReload %}
+        <meta name="frankenphp-hot-reload:url" content="{{ frankenphpHotReload }}">
+        <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
+        <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
+        {% endif %}
+    </head>
+    <body class="min-h-screen relative">
+        <!-- Global Flash Messages -->
+        <div class="fixed top-8 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="pointer-events-auto mb-4 p-4 rounded-2xl shadow-2xl border flex items-center gap-4 animate-in slide-in-from-top-full duration-500 {{ label == 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-red-50 border-red-100 text-red-800' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 {{ label == 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white' }}">
+                            <i class="fa-solid {{ label == 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' }} text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[10px] uppercase font-black tracking-widest opacity-60 mb-0.5">{{ label }}</p>
+                            <p class="text-sm font-bold leading-tight">{{ message }}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="p-2 hover:bg-black/5 rounded-lg transition">
+                            <i class="fa-solid fa-xmark opacity-50"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <script>
+            document.addEventListener('input', function(e) {
+                const el = e.target;
+                if (!el.hasAttribute('data-live-validation-pattern-value') && !el.hasAttribute('data-live-validation-required-value')) return;
+
+                const pattern = el.getAttribute('data-live-validation-pattern-value');
+                const min = el.getAttribute('data-live-validation-min-value');
+                const required = el.getAttribute('data-live-validation-required-value');
+                const message = el.getAttribute('data-live-validation-message-value') || 'Invalid format';
+                
+                const value = el.value;
+                let isValid = true;
+                let currentMessage = '';
+
+                if (required === 'true' && !value) {
+                    isValid = false;
+                    currentMessage = 'This field is required';
+                } else if (min && value.length < parseInt(min) && value.length > 0) {
+                    isValid = false;
+                    currentMessage = `Minimum ${min} characters required`;
+                } else if (pattern && value.length > 0) {
+                    const regex = new RegExp(pattern);
+                    if (!regex.test(value)) {
+                        isValid = false;
+                        currentMessage = message;
+                    }
+                }
+
+                // Update UI
+                const container = el.closest('.space-y-2') || el.parentElement;
+                let errorMsg = container.querySelector('.live-error-msg');
+                if (!errorMsg) {
+                    errorMsg = document.createElement('div');
+                    errorMsg.className = 'live-error-msg text-red-500 text-[10px] font-black uppercase tracking-wider px-1 mt-1';
+                    container.appendChild(errorMsg);
+                }
+
+                if (isValid) {
+                    el.classList.remove('bg-red-50', 'border-red-200');
+                    el.classList.add('bg-slate-50', 'border-slate-100');
+                    errorMsg.textContent = '';
+                    const backendErrors = container.querySelector('ul');
+                    if (backendErrors) backendErrors.style.display = 'none';
+                    const invalidBadge = container.querySelector('span.text-red-500');
+                    if (invalidBadge && invalidBadge.textContent.includes('Invalid')) invalidBadge.style.display = 'none';
+                } else {
+                    el.classList.add('bg-red-50', 'border-red-200');
+                    el.classList.remove('bg-slate-50', 'border-slate-100');
+                    errorMsg.textContent = currentMessage;
+                }
+            });
+        </script>
+
+        {% block body %}{% endblock %}
+    </body>
+</html>

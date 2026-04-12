@@ -1,0 +1,75 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Manage Cheques | Esprit Admin{% endblock %}
+{% block page_title %}Digital Cheques{% endblock %}
+
+{% block body %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;">Issued Cheques</h2>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>Issuer</th>
+                    <th>Designated IBAN</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Expiration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cheque in cheques %}
+                <tr>
+                    <td style="font-family: monospace;">{{ cheque.chequeNumber }}</td>
+                    <td>{{ cheque.sender.firstName }} {{ cheque.sender.lastName }}</td>
+                    <td>{{ cheque.receiverIban }}</td>
+                    <td style="font-weight: bold; color: var(--text-main);">{{ cheque.amount|number_format(2, '.', ',') }} TND</td>
+                    <td>
+                        {% if cheque.status == 'PENDING' %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% elseif cheque.status == 'PENDING_VERIFICATION' %}
+                            <span class="badge badge-info">Verifying</span>
+                        {% elseif cheque.status == 'REDEEMED' %}
+                            <span class="badge badge-success">Redeemed</span>
+                        {% elseif cheque.status == 'EXPIRED' %}
+                            <span class="badge badge-danger">Expired</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(255,255,255,0.1);">{{ cheque.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.9rem;">
+                        {{ cheque.expirationDateFormatted }}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            {% if cheque.status != 'REDEEMED' and cheque.status != 'EXPIRED' %}
+                                <form method="post" action="{{ path('admin_cheque_status', {'id': cheque.id, 'status': 'EXPIRED'}) }}">
+                                    <button class="btn btn-danger btn-sm" type="submit" title="Force Expire" style="margin: 0;"><i class="fas fa-ban"></i></button>
+                                </form>
+                            {% endif %}
+                            {% if cheque.status == 'PENDING_VERIFICATION' %}
+                                <form method="post" action="{{ path('admin_cheque_status', {'id': cheque.id, 'status': 'REDEEMED'}) }}">
+                                    <button class="btn btn-success btn-sm" type="submit" title="Mark Redeemed" style="margin: 0;"><i class="fas fa-check"></i></button>
+                                </form>
+                            {% endif %}
+                            <form method="post" action="{{ path('admin_cheque_delete', {'id': cheque.id}) }}" onsubmit="return confirm('Are you sure you want to delete this cheque?');">
+                                <button class="btn btn-danger btn-sm" type="submit" style="margin: 0;"><i class="fas fa-trash"></i> Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No cheques found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

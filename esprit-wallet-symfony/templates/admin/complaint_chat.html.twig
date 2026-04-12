@@ -1,0 +1,220 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Live Support | Esprit Admin{% endblock %}
+{% block page_title %}Ticket #{{ complaint.id }} | Live Support{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .chat-container {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 1rem;
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        height: 60vh;
+        max-height: 800px;
+        overflow: hidden;
+    }
+
+    .chat-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(30, 41, 59, 0.8);
+    }
+
+    .chat-body {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .message {
+        max-width: 70%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .message.user {
+        align-self: flex-start;
+    }
+
+    .message.admin {
+        align-self: flex-end;
+    }
+
+    .message-bubble {
+        padding: 1rem 1.25rem;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        position: relative;
+    }
+
+    .message.user .message-bubble {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+        border: 1px solid var(--border);
+        border-bottom-left-radius: 0;
+    }
+
+    .message.admin .message-bubble {
+        background: var(--primary);
+        color: white;
+        border-bottom-right-radius: 0;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    }
+
+    .message-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+    }
+
+    .chat-footer {
+        padding: 1.5rem;
+        background: rgba(30, 41, 59, 0.8);
+        border-top: 1px solid var(--border);
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .chat-input {
+        flex: 1;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 3rem;
+        padding: 1rem 1.5rem;
+        color: white;
+        font-family: inherit;
+        transition: all 0.3s;
+    }
+
+    .chat-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: rgba(15, 23, 42, 0.8);
+    }
+
+    .send-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 3rem;
+        padding: 0 2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .send-btn:hover {
+        background: var(--primary-hover);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_complaints') }}" class="btn" style="margin-bottom: 1.5rem; background: rgba(255,255,255,0.1); color: white;">
+        <i class="fas fa-arrow-left"></i> Back to Tickets
+    </a>
+
+    <div class="chat-container">
+        <header class="chat-header">
+            <div>
+                <h2 style="margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                    {{ complaint.title }}
+                </h2>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    User: {{ complaint.user.firstName }} {{ complaint.user.lastName }} | Category: {{ complaint.category }}
+                </div>
+            </div>
+            <div>
+                {% if complaint.status == 'RESOLVED' %}
+                    <span class="badge badge-success">Resolved</span>
+                {% else %}
+                    <span class="badge badge-warning">Pending</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <div class="chat-body">
+            <!-- User Initial Complaint -->
+            <div class="message user">
+                <div class="message-meta">
+                    <span>{{ complaint.user.firstName|lower }}</span>
+                    <span>{{ complaint.createdAt|date('M d, Y / H:i') }}</span>
+                </div>
+                <div class="message-bubble">
+                    {{ complaint.description }}
+                </div>
+            </div>
+
+            <!-- Agent & User Replies -->
+            {% if complaint.replyMessage %}
+                {% set replies = complaint.replyMessage|split('\n\n') %}
+                {% for reply in replies %}
+                    {% if reply starts with 'USER::' %}
+                        <div class="message user">
+                            <div class="message-meta">
+                                <span>{{ complaint.user.firstName|lower }}</span>
+                            </div>
+                            <div class="message-bubble">
+                                {{ reply|slice(6)|nl2br }}
+                            </div>
+                        </div>
+                    {% else %}
+                        {% set agentMsg = reply starts with 'AGENT::' ? reply|slice(7) : reply %}
+                        <div class="message admin">
+                            <div class="message-meta">
+                                <span>Agent (You)</span>
+                            </div>
+                            <div class="message-bubble">
+                                {{ agentMsg|nl2br }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <footer class="chat-footer">
+            {% if complaint.status == 'RESOLVED' %}
+                <div style="text-align: center; color: var(--secondary); font-size: 0.9rem; font-weight: 600;">
+                    <i class="fas fa-check-circle"></i> Support interaction completed. Ticket is resolved.
+                </div>
+            {% else %}
+                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fas fa-info-circle"></i> Chat will remain open until marked resolved. You can send multiple updates.</span>
+                    <form method="post" action="{{ path('admin_complaint_resolve', {'id': complaint.id}) }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Mark this ticket as resolved and lock the chat?');"><i class="fas fa-check"></i> Mark Resolved</button>
+                    </form>
+                </div>
+                <form method="POST" action="{{ path('admin_complaint_chat', {'id': complaint.id}) }}" class="chat-input-wrapper">
+                    <input type="text" name="replyMessage" class="chat-input" placeholder="Type your response to the user..." required autocomplete="off">
+                    <button type="submit" class="send-btn">
+                        <span>Send Reply</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            {% endif %}
+        </footer>
+    </div>
+{% endblock %}

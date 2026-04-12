@@ -1,0 +1,150 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Complaint Ticket #{{ complaint.id }} | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8">
+    
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight uppercase">Ticket #{{ complaint.id }}</h1>
+            <p class="text-slate-500 font-bold mt-1">{{ complaint.title }} <span class="mx-2 text-slate-300">|</span> {{ complaint.category }}</p>
+        </div>
+        <div id="statusBadge" class="px-5 py-2 rounded-xl font-bold uppercase tracking-widest text-xs border
+            {{ complaint.status == 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200' : 
+               complaint.status == 'IN_PROGRESS' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+               complaint.status == 'RESOLVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200' }}">
+            {{ complaint.status }}
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="bg-slate-50 rounded-3xl border border-slate-200 p-8 flex flex-col gap-8 shadow-inner min-h-[500px]">
+        
+        <!-- Live Connection Notice -->
+        <div class="text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Support Connection Active
+        </div>
+
+        <!-- Initial User Message -->
+        <div class="flex gap-4 max-w-[85%] self-end">
+            <div class="bg-primary text-white p-6 rounded-3xl rounded-tr-sm shadow-md">
+                <p class="text-[10px] uppercase font-black tracking-widest text-white/50 mb-3 flex justify-between">
+                    <span>You</span>
+                    <span>{{ complaint.createdAt|date('M d, Y / H:i') }}</span>
+                </p>
+                <p class="leading-relaxed font-medium whitespace-pre-wrap">{{ complaint.description }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-500 shadow-md">
+                {{ complaint.user.firstName|first }}{{ complaint.user.lastName|first }}
+            </div>
+        </div>
+
+        <!-- Chat History -->
+        {% if complaint.replyMessage %}
+            {% set replies = complaint.replyMessage|split('\n\n') %}
+            {% for reply in replies %}
+                {% if reply starts with 'USER::' %}
+                    <div class="flex gap-4 max-w-[85%] self-end">
+                        <div class="bg-primary/90 text-white p-6 rounded-3xl rounded-tr-sm shadow-md">
+                            <p class="text-[10px] uppercase font-black tracking-widest text-white/50 mb-3 flex justify-between">
+                                <span>You</span>
+                            </p>
+                            <p class="leading-relaxed font-medium whitespace-pre-wrap">{{ reply|slice(6) }}</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-500 shadow-md">
+                            {{ complaint.user.firstName|first }}{{ complaint.user.lastName|first }}
+                        </div>
+                    </div>
+                {% else %}
+                    {% set agentMsg = reply starts with 'AGENT::' ? reply|slice(7) : reply %}
+                    <div class="flex gap-4 max-w-[85%] self-start">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 border-2 border-white flex items-center justify-center text-white shadow-md text-xl">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 p-6 rounded-3xl rounded-tl-sm card-shadow text-slate-700">
+                            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                                <span class="bg-amber-100 text-amber-600 px-2 py-0.5 rounded-md">Esprit Support</span> 
+                            </p>
+                            <p class="leading-relaxed font-medium whitespace-pre-wrap">{{ agentMsg }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <!-- Waiting Indicator (Only if waiting for initial reply or if ticket is still pending and last message was user) -->
+        {% if complaint.status != 'RESOLVED' %}
+            <div id="waitingIndicator" class="flex gap-4 max-w-[85%] self-start hidden">
+                <div class="w-12 h-12 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-slate-400 shadow-md text-xl">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="bg-white border border-slate-200 p-4 rounded-3xl rounded-tl-sm shadow-sm flex items-center gap-2">
+                    <span class="text-sm font-bold text-slate-400 italic">Waiting for update...</span>
+                    <i class="fa-solid fa-ellipsis text-slate-300 animate-pulse"></i>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Reply Form for User -->
+        {% if complaint.status != 'RESOLVED' %}
+            <div class="mt-4 border-t border-slate-200 pt-6">
+                <form method="POST" action="{{ path('app_complaint_show', {'id': complaint.id}) }}" class="flex gap-4">
+                    <input type="text" name="userReply" required autocomplete="off" placeholder="Type your reply here..." class="flex-1 rounded-2xl border-slate-300 shadow-sm focus:border-primary focus:ring-primary px-6 py-4">
+                    <button type="submit" class="px-8 py-4 bg-primary text-white font-bold rounded-2xl hover:bg-blue-600 shadow-md transition-all">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <div class="mt-4 border-t border-slate-200 pt-6 text-center text-slate-500 font-bold uppercase tracking-widest text-sm">
+                <i class="fa-solid fa-lock mr-2"></i> This ticket is resolved and locked.
+            </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Controls -->
+    <div class="mt-8 flex justify-center gap-4">
+        <a href="{{ path('app_complaint_index') }}" class="px-8 py-4 bg-slate-800 text-white font-extrabold rounded-2xl hover:bg-black transition-all text-sm uppercase tracking-widest bg-gradient-to-r hover:from-slate-800 hover:to-slate-900 shadow-xl">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Return to Tickets
+        </a>
+    </div>
+
+</div>
+
+// JavaScript for Live Chat Polling (Refresh strictly on new data)
+<script>
+    document.addEventListener('turbo:load', () => {
+        const syncUrl = "{{ path('app_complaint_sync', {'id': complaint.id}) }}";
+        
+        let initialReplyLength = {{ complaint.replyMessage ? complaint.replyMessage|length : 0 }};
+        let currentStatus = "{{ complaint.status }}";
+        
+        // Clear any existing intervals to prevent memory leaks during Turbo navigation
+        if (window.chatInterval) clearInterval(window.chatInterval);
+
+        window.chatInterval = setInterval(async () => {
+            try {
+                const response = await fetch(syncUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await response.json();
+                
+                let newLength = data.replyMessage ? data.replyMessage.length : 0;
+                
+                // If anything fundamentally changed, use Turbo to visit the page (faster than reload)
+                if (newLength !== initialReplyLength || data.status !== currentStatus) {
+                    if (window.Turbo) {
+                        window.Turbo.visit(window.location.href, { action: 'replace' });
+                    } else {
+                        window.location.reload();
+                    }
+                    clearInterval(window.chatInterval);
+                }
+
+            } catch (error) {
+                console.warn("Live chat link temporarily interrupted.");
+            }
+        }, 4000); 
+    });
+</script>
+{% endblock %}

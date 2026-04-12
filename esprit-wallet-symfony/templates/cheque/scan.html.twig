@@ -1,0 +1,223 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}AI Cheque Scanner | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-12 px-4" id="scanner-container" data-scan-url="{{ path('app_cheque_scan') }}">
+    <!-- Upload State -->
+    <div id="upload-state" class="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-10 border border-white/20 shadow-2xl text-center transform transition-all duration-500">
+        <div class="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl mx-auto mb-8 shadow-inner animate-bounce-subtle">
+            <i class="fa-solid fa-microchip"></i>
+        </div>
+        <h1 class="text-3xl font-black text-slate-800 mb-3 tracking-tight uppercase">Intelligence Cheque Scanner</h1>
+        <p class="text-slate-500 mb-10 max-w-sm mx-auto leading-relaxed">Upload a clear photo of your paper cheque. Our proprietary AI will instantly extract the amount, IBAN, and sender details.</p>
+
+        <div class="space-y-6">
+            <div id="drop-zone" class="relative overflow-hidden group border-2 border-dashed border-slate-200 rounded-[2rem] p-14 hover:border-primary transition-all duration-300 cursor-pointer bg-slate-50/50 hover:bg-primary/5">
+                <input type="file" class="hidden" id="cheque_file" accept="image/*">
+                <label for="cheque_file" class="cursor-pointer">
+                    <div class="mb-5 relative inline-block">
+                        <i class="fa-solid fa-cloud-arrow-up text-6xl text-slate-300 group-hover:text-primary transition-all duration-500 transform group-hover:scale-110 group-hover:-translate-y-1"></i>
+                    </div>
+                    <p class="font-black text-slate-800 text-lg">Drop your cheque image here</p>
+                    <p class="text-[10px] text-slate-400 mt-2 uppercase font-black tracking-[0.2em]">High resolution JPG/PNG recommended</p>
+                </label>
+            </div>
+
+            <button id="start-analysis" class="w-full gradient-bg text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 opacity-50 cursor-not-allowed" disabled>
+                <i class="fa-solid fa-dna animate-pulse"></i>
+                Start AI Analysis
+            </button>
+        </div>
+
+        <div class="mt-10 pt-8 border-t border-slate-100 flex items-center justify-center gap-10 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-emerald-500 text-sm"></i> Neural Encryption</span>
+            <span class="flex items-center gap-2"><i class="fa-solid fa-bolt-lightning text-amber-500 text-sm"></i> Real-time OCR</span>
+        </div>
+    </div>
+
+    <!-- Analyzing State (Hidden) -->
+    <div id="analyzing-state" class="hidden bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl text-center transform transition-all duration-500 border border-slate-800">
+        <div class="relative w-full aspect-[16/9] bg-slate-800 rounded-3xl mb-8 overflow-hidden shadow-2xl border border-slate-700">
+            <img id="preview-image" src="" alt="Preview" class="w-full h-full object-cover opacity-60">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+            
+            <!-- Scanning Line -->
+            <div class="scanner-line absolute top-0 left-0 w-full h-1 bg-primary shadow-[0_0_15px_#00E5FF] z-10"></div>
+            
+            <!-- Analysis Overlay -->
+            <div class="absolute top-6 left-6 text-left space-y-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-primary animate-ping"></div>
+                    <span class="text-[10px] font-black text-primary uppercase tracking-widest">System Online</span>
+                </div>
+                <div class="text-[10px] font-mono text-slate-400 opacity-80" id="analysis-log">
+                    Initializing Neural Network...<br>
+                    Identifying Edge Contours...<br>
+                    Detecting Text Regions...
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-black text-white mb-2 tracking-tight uppercase">AI is analyzing your cheque</h2>
+        <div class="w-64 h-1.5 bg-slate-800 rounded-full mx-auto mb-8 overflow-hidden">
+            <div id="progress-bar" class="w-0 h-full bg-primary transition-all duration-500"></div>
+        </div>
+        <p class="text-slate-400 text-sm animate-pulse">Extracting financial tokens and verifying sender signatures...</p>
+    </div>
+
+    <!-- Result State (Hidden) -->
+    <div id="result-state" class="hidden bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-2xl text-center transform transition-all duration-500">
+        <div class="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 text-4xl mx-auto mb-6">
+            <i class="fa-solid fa-check-double"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 mb-1 tracking-tight uppercase">Recognition Successful</h2>
+        <p class="text-slate-500 mb-8 text-sm">We've successfully extracted the following details from your cheque.</p>
+
+        <div class="bg-slate-50 rounded-3xl p-6 mb-8 text-left border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sender</span>
+                <span class="font-bold text-slate-800" id="res-sender">---</span>
+            </div>
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cheque Number</span>
+                <span class="font-mono font-bold text-slate-800" id="res-number">---</span>
+            </div>
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Extracted Amount</span>
+                <span class="text-xl font-black text-primary" id="res-amount">0.00 TND</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">AI Confidence</span>
+                <span class="flex items-center gap-1 text-[10px] font-black text-emerald-500">
+                    <i class="fa-solid fa-shield-check"></i> <span id="res-confidence">98.5%</span>
+                </span>
+            </div>
+        </div>
+
+        <form id="redeem-form" method="POST" action="{{ path('app_cheque_scan') }}">
+            <input type="hidden" name="chequeNumber" id="hidden-number">
+            <input type="hidden" name="secureToken" id="hidden-token">
+            
+            <button type="submit" class="w-full gradient-bg text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                Redeem Money Now
+            </button>
+        </form>
+        
+        <button id="retry-scan" class="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors">
+            Scan different image
+        </button>
+    </div>
+</div>
+
+<style>
+    @keyframes scan {
+        0% { top: 0; }
+        100% { top: 100%; }
+    }
+    .scanner-line {
+        animation: scan 2s linear infinite alternate;
+    }
+    .animate-bounce-subtle {
+        animation: bounce-subtle 3s ease-in-out infinite;
+    }
+    @keyframes bounce-subtle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('cheque_file');
+    const startBtn = document.getElementById('start-analysis');
+    const uploadState = document.getElementById('upload-state');
+    const analyzingState = document.getElementById('analyzing-state');
+    const resultState = document.getElementById('result-state');
+    const previewImg = document.getElementById('preview-image');
+    const progressBar = document.getElementById('progress-bar');
+    const scanUrl = document.getElementById('scanner-container').dataset.scanUrl;
+
+    let selectedFile = null;
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Show preview logic if needed here
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                previewImg.src = re.target.result;
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    });
+
+    startBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+
+        // Transition to Analyzing
+        uploadState.classList.add('hidden');
+        analyzingState.classList.remove('hidden');
+
+        // Progress bar simulation
+        let prog = 0;
+        const interval = setInterval(() => {
+            prog += Math.random() * 15;
+            if (prog > 95) prog = 95;
+            progressBar.style.width = prog + '%';
+        }, 300);
+
+        // Upload and Analyze
+        const formData = new FormData();
+        formData.append('cheque_image', selectedFile);
+
+        try {
+            const response = await fetch(scanUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            clearInterval(interval);
+            progressBar.style.width = '100%';
+
+            setTimeout(() => {
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to analyze cheque'));
+                    location.reload();
+                }
+            }, 800);
+
+        } catch (error) {
+            console.error('OCR Error:', error);
+            alert('A critical error occurred during AI analysis.');
+            location.reload();
+        }
+    });
+
+    function showResults(data) {
+        analyzingState.classList.add('hidden');
+        resultState.classList.remove('hidden');
+
+        document.getElementById('res-sender').textContent = data.senderName;
+        document.getElementById('res-number').textContent = data.chequeNumber;
+        document.getElementById('res-amount').textContent = data.amount + ' TND';
+        document.getElementById('res-confidence').textContent = (data.confidence * 100).toFixed(1) + '%';
+        
+        document.getElementById('hidden-number').value = data.chequeNumber;
+        document.getElementById('hidden-token').value = data.secureToken;
+    }
+
+    document.getElementById('retry-scan').addEventListener('click', () => location.reload());
+});
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Manage Accounts | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-4 uppercase">
+        <i class="fa-solid fa-building-columns text-primary"></i>
+        My Accounts
+    </h1>
+    <a href="{{ path('app_account_new') }}" class="gradient-bg text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-lg transition flex items-center gap-3">
+        <i class="fa-solid fa-plus-circle"></i> New Account
+    </a>
+</div>
+
+<div class="bg-white rounded-3xl border card-shadow overflow-hidden">
+    <table class="w-full text-left">
+        <thead class="bg-slate-50 border-b">
+            <tr class="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <th class="px-8 py-4">Account Holder</th>
+                <th class="py-4">Account Number</th>
+                <th class="py-4">Type</th>
+                <th class="py-4">Status</th>
+                <th class="py-4 text-right pr-8">Balance</th>
+                <th class="py-4 text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y text-sm">
+            {% for account in accounts %}
+                <tr class="group hover:bg-slate-50 transition">
+                    <td class="px-8 py-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                                {{ account.user.firstName|first }}{{ account.user.lastName|first }}
+                            </div>
+                            <div class="font-bold text-slate-700">{{ account.user.firstName }} {{ account.user.lastName }}</div>
+                        </div>
+                    </td>
+                    <td class="py-6 font-mono text-slate-500 font-bold uppercase tracking-widest text-xs">{{ account.accountNumber }}</td>
+                    <td class="py-6">
+                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[9px] uppercase tracking-wide border">
+                            {{ account.type }}
+                        </span>
+                    </td>
+                    <td class="py-6">
+                        <span class="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-widest {{ account.status == 'ACTIVE' ? 'text-emerald-500' : 'text-red-400' }}">
+                            <span class="w-2 h-2 rounded-full {{ account.status == 'ACTIVE' ? 'bg-emerald-500' : 'bg-red-500' }} animate-pulse"></span>
+                            {{ account.status }}
+                        </span>
+                    </td>
+                    <td class="py-6 text-right pr-8">
+                        <p class="text-lg font-black text-slate-800">{{ account.balance }} TND</p>
+                    </td>
+                    <td class="py-6">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="w-9 h-9 rounded-xl border hover:bg-primary hover:text-white hover:border-primary transition flex items-center justify-center text-slate-400">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-center py-20 text-slate-300 italic">No account records found. Click 'New Account' to begin.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-8 bg-blue-50/50 border border-blue-100 p-6 rounded-3xl flex items-center gap-6">
+    <div class="w-14 h-14 rounded-2xl bg-white border border-blue-200 flex items-center justify-center text-primary text-2xl shadow-sm">
+        <i class="fa-solid fa-lightbulb"></i>
+    </div>
+    <div>
+        <h4 class="font-bold text-blue-900 mb-1 tracking-tight">Financial Tip: Diversify Your Savings</h4>
+        <p class="text-sm text-blue-800 opacity-70">Creating a dedicated savings account helps you manage goals more effectively. Most ESPRIT Wallet users have at least 3 active accounts.</p>
+    </div>
+</div>
+{% endblock %}

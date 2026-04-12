@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Authentication Portal | ESPRIT WALLET{% endblock %}
+
+{% block body %}
+<div class="flex-1 flex flex-col lg:flex-row h-screen overflow-hidden">
+    <!-- Branding Side -->
+    <div class="hidden lg:flex flex-col flex-1 gradient-bg p-12 text-white relative">
+        <div class="relative z-10 flex flex-col h-full">
+            <div class="text-3xl font-black uppercase tracking-widest flex items-center gap-4">
+                <i class="fa-solid fa-wallet text-4xl"></i>
+                Esprit Wallet
+            </div>
+            <div class="flex-1 flex flex-col justify-center">
+                <h1 class="text-6xl font-black uppercase leading-tight tracking-tighter mb-6">Redefining <br> Finance <br> for Esprit</h1>
+                <p class="text-lg text-white/70 max-w-md font-medium">Join thousands of students and faculty managing digital cheques, accounts, and financial complaints seamlessly.</p>
+            </div>
+            <div class="flex items-center gap-8 py-8 opacity-50 font-black text-xs uppercase tracking-widest">
+                <span>Secure 256-bit AES</span>
+                <span>GDPR Compliant</span>
+                <span>Active Support</span>
+            </div>
+        </div>
+        <!-- Decorative Elements -->
+        <div class="absolute -right-20 bottom-32 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute right-20 top-20 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+    </div>
+
+    <!-- Auth Side -->
+    <div class="flex-1 flex items-center justify-center bg-white p-8">
+        <div class="max-w-md w-full">
+            <div class="mb-10 lg:hidden text-center">
+                 <div class="text-primary text-5xl mb-4"><i class="fa-solid fa-wallet"></i></div>
+                 <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Esprit Wallet</h2>
+            </div>
+            <div class="mb-12">
+                <h2 class="text-3xl font-black text-slate-800 uppercase tracking-tight mb-2">Welcome Back</h2>
+                <p class="text-slate-500 font-medium tracking-tight">Enter your credentials to access your digital dashboard.</p>
+            </div>
+
+            <form method="post" class="space-y-6">
+                {% if error %}
+                    <div class="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-3 border border-red-100">
+                        <i class="fa-solid fa-circle-exclamation text-lg"></i>
+                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                    </div>
+                {% endif %}
+
+                <div class="space-y-2">
+                    <label class="block text-xs uppercase font-black text-slate-400 tracking-widest pl-3">Institutional Email</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-5 top-5 text-slate-300"></i>
+                         <input type="email" value="{{ last_username }}" name="_username" id="username" class="w-full bg-slate-50 border border-slate-100 outline-none p-5 pl-14 rounded-2xl font-bold text-slate-700 focus:ring-2 ring-primary transition border shadow-sm" required autofocus>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs uppercase font-black text-slate-400 tracking-widest pl-3 flex justify-between">
+                        <span>Private Password</span>
+                        <a href="{{ path('app_forgot_password_request') }}" class="text-primary hover:underline">Forgot?</a>
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid fa-shield-halved absolute left-5 top-5 text-slate-300"></i>
+                        <input type="password" name="_password" id="password" class="w-full bg-slate-50 border border-slate-100 outline-none p-5 pl-14 rounded-2xl font-bold text-slate-700 focus:ring-2 ring-primary transition border shadow-sm" required>
+                    </div>
+                </div>
+
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <button class="w-full gradient-bg text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:shadow-lg transition flex items-center justify-center gap-3 shadow-xl">
+                    <i class="fa-solid fa-unlock"></i> Secure Login
+                </button>
+            </form>
+
+            <div class="mt-12 pt-8 border-t text-center">
+                <p class="text-sm font-medium text-slate-500">Not registered at Esprit Wallet yet?</p>
+                <a href="{{ path('app_register') }}" class="inline-block mt-4 text-primary font-black uppercase tracking-widest text-xs border-b-2 border-primary/20 hover:border-primary transition pb-1">Create an Account</a>
+            </div>
+            
+            <div class="mt-12 text-center text-[10px] uppercase font-black tracking-tighter text-slate-400 flex items-center justify-center gap-6">
+                 <span>v1.0-STABLE</span>
+                 <div class="flex items-center gap-1"><i class="fa-solid fa-circle-check text-emerald-500"></i> RECAPTCHA ACTIVE</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

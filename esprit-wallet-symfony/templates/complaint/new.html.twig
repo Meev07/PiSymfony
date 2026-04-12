@@ -1,0 +1,30 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Raise Concern | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-12">
+    <div class="bg-white rounded-3xl overflow-hidden border card-shadow">
+        <div class="gradient-bg px-10 py-12 text-white flex items-center gap-10">
+            <div class="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center text-white text-5xl">
+                <i class="fa-solid fa-headset"></i>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-4xl font-black uppercase tracking-tight mb-2">Support Hub</h1>
+                <p class="text-white/70 font-medium">Explain your issue in detail. Our specialized agents will respond within 24 business hours.</p>
+            </div>
+            <div class="hidden xl:block">
+                <i class="fa-solid fa-bolt text-7xl opacity-10"></i>
+            </div>
+        </div>
+
+        {{ include('complaint/_form.html.twig') }}
+        
+        <div class="bg-slate-50 p-6 flex items-center justify-center gap-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest border-t">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-lock text-emerald-500"></i> Encrypted Channel</span>
+            <span class="flex items-center gap-2"><i class="fa-solid fa-user-shield text-primary"></i> Data Privacy Compliant</span>
+            <span class="flex items-center gap-2"><i class="fa-solid fa-ticket text-amber-500"></i> Automatic Ticket Tracking</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

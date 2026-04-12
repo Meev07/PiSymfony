@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 40px 20px; text-align: center; color: #ffffff; }
+        .content { padding: 40px; text-align: center; }
+        .footer { padding: 20px; text-align: center; background-color: #f1f5f9; color: #64748b; font-size: 12px; }
+        .button { display: inline-block; padding: 16px 32px; background: #6366f1; color: #ffffff !important; text-decoration: none; border-radius: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 30px 0; }
+        .expiry { color: #94a3b8; font-size: 13px; margin-top: 20px; }
+        h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+        p { line-height: 1.6; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ESPRIT WALLET</h1>
+            <p style="opacity: 0.7; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px;">Security Verification</p>
+        </div>
+        <div class="content">
+            <h2 style="font-weight: 800; color: #334155;">Password Reset Request</h2>
+            <p>Hello,</p>
+            <p>A request has been made to reset the password for your institutional wallet account. If you did not make this request, please ignore this email.</p>
+            
+            <a href="{{ url('app_reset_password', {token: resetToken.token}) }}" class="button">Reset Password</a>
+            
+            <p class="expiry">This secure link will expire in <strong>{{ resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle') }}</strong>.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ "now"|date("Y") }} Esprit Wallet Security Team. All rights reserved.</p>
+            <p>This is an automated security notification. Do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

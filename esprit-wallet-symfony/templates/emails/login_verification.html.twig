@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 40px 20px; text-align: center; color: #ffffff; }
+        .content { padding: 40px; text-align: center; }
+        .footer { padding: 20px; text-align: center; background-color: #f1f5f9; color: #64748b; font-size: 12px; }
+        .code-box { display: inline-block; padding: 20px 40px; background-color: #f1f5f9; color: #1e293b; font-size: 32px; font-weight: 900; letter-spacing: 12px; border-radius: 16px; margin: 30px 0; border: 2px dashed #cbd5e1; }
+        h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+        p { line-height: 1.6; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ESPRIT WALLET</h1>
+            <p style="opacity: 0.7; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px;">Login Verification</p>
+        </div>
+        <div class="content">
+            <h2 style="font-weight: 800; color: #334155;">Hello, {{ user.firstName }}!</h2>
+            <p>To finalize your secure login to Esprit Wallet, please enter the following verification code in your browser:</p>
+            
+            <div class="code-box">{{ code }}</div>
+            
+            <p style="color: #64748b; font-size: 13px;">This code is valid for **10 minutes**. If you did not attempt to login, please secure your account immediately.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ "now"|date("Y") }} Esprit Wallet Security Team. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

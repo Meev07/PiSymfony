@@ -1,0 +1,186 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Face ID Verification - Esprit Wallet{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-900 flex items-center justify-center p-6 overflow-hidden">
+    <!-- Abstract background glow -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+
+    <div class="w-full max-w-md relative z-10 text-center space-y-8 animate-in zoom-in-95 duration-700">
+        <!-- Brand -->
+        <div class="flex items-center justify-center gap-3 text-white/40 mb-12">
+            <i class="fa-solid fa-wallet text-2xl"></i>
+            <span class="text-xl font-bold uppercase tracking-[0.2em]">Esprit Wallet</span>
+        </div>
+
+        <div class="relative mx-auto w-64 h-64">
+            <!-- Camera Preview -->
+            <div class="absolute inset-0 rounded-[64px] overflow-hidden border-2 border-white/10 bg-black">
+                <video id="faceVideo" autoplay muted playsinline class="w-full h-full object-cover opacity-60"></video>
+            </div>
+
+            <!-- Scanner Face Overlay (Apple Style) -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="w-48 h-60 rounded-[100px] border-2 border-purple-500/50 relative overflow-hidden">
+                    <!-- Scanner Beam -->
+                    <div id="scannerBeam" class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent top-0 animate-bounce transition-all duration-300"></div>
+                    <div class="absolute inset-0 ring-2 ring-purple-500/30 rounded-[100px] animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Status Indicator -->
+            <div id="statusIcon" class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 bg-white rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-500 transform scale-0">
+                <i class="fa-solid fa-check text-emerald-500 text-3xl"></i>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <h1 id="mainTitle" class="text-3xl font-black text-white tracking-tight">Face ID Verification</h1>
+            <p id="subTitle" class="text-white/60 text-lg">Looking for face...</p>
+        </div>
+
+        <div id="loadingIndicator" class="flex flex-col items-center gap-4">
+            <div class="w-8 h-8 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin"></div>
+            <p class="text-[10px] text-white/30 uppercase font-black tracking-widest">Initialising AI</p>
+        </div>
+
+        <div class="pt-12">
+            <a href="{{ path('app_logout') }}" class="text-white/40 hover:text-white transition text-sm font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i>
+                Cancel and Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes scanner-sweep {
+        0% { top: 0%; opacity: 0; }
+        20% { opacity: 1; }
+        50% { top: 100%; }
+        80% { opacity: 1; }
+        100% { top: 0%; opacity: 0; }
+    }
+    #scannerBeam {
+        animation: scanner-sweep 3s ease-in-out infinite;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+    const video = document.getElementById('faceVideo');
+    const title = document.getElementById('mainTitle');
+    const subtitle = document.getElementById('subTitle');
+    const loader = document.getElementById('loadingIndicator');
+    const beam = document.getElementById('scannerBeam');
+    const statusIcon = document.getElementById('statusIcon');
+    
+    let isVerifying = false;
+
+    async function init() {
+        console.log("Initializing Face ID system...");
+        try {
+            subtitle.textContent = 'Loading AI Brain...';
+            
+            // Using SSD MobileNet V1 (more robust)
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            
+            console.log("Models loaded successfully.");
+            subtitle.textContent = 'Requesting Camera Access...';
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                } 
+            });
+            
+            video.srcObject = stream;
+            console.log("Camera started.");
+            
+            // Wait for video to be ready
+            video.onloadedmetadata = () => {
+                loader.style.opacity = '0';
+                subtitle.textContent = 'Scanning Identity...';
+                subtitle.classList.replace('text-white/60', 'text-purple-400');
+                requestAnimationFrame(verifyLoop);
+            };
+
+        } catch (err) {
+            console.error("Initialization Failed:", err);
+            subtitle.textContent = 'Verification Halted: ' + err.message;
+            subtitle.classList.add('text-red-400');
+            loader.style.display = 'none';
+        }
+    }
+
+    async function verifyLoop() {
+        if (isVerifying) return;
+        
+        // Use SSD detection for higher accuracy
+        const detection = await faceapi.detectSingleFace(video)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (detection) {
+            isVerifying = true;
+            subtitle.textContent = 'Authenticating...';
+            
+            try {
+                const response = await fetch('{{ path('app_face_id_verify_check') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ descriptor: Array.from(detection.descriptor) })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    onSuccess();
+                } else {
+                    isVerifying = false;
+                    subtitle.textContent = 'Face mismatch. Please look directly at the center.';
+                    setTimeout(() => requestAnimationFrame(verifyLoop), 1000);
+                }
+            } catch (err) {
+                console.error("Network error during verification:", err);
+                isVerifying = false;
+                setTimeout(() => requestAnimationFrame(verifyLoop), 1000);
+            }
+        } else {
+            requestAnimationFrame(verifyLoop);
+        }
+    }
+
+    function onSuccess() {
+        video.classList.replace('opacity-60', 'opacity-20');
+        beam.style.display = 'none';
+        statusIcon.classList.replace('scale-0', 'scale-100');
+        title.textContent = 'Access Granted';
+        subtitle.textContent = 'Welcome back, {{ app.user.firstName }}';
+        subtitle.classList.replace('text-white/60', 'text-emerald-400');
+        
+        setTimeout(() => {
+            window.location.href = '{{ path('user_dashboard') }}';
+        }, 1500);
+    }
+
+    // Safety wrapper to ensure library is loaded
+    function startWhenReady() {
+        if (typeof faceapi !== 'undefined') {
+            init();
+        } else {
+            console.log("Waiting for faceapi library...");
+            setTimeout(startWhenReady, 100);
+        }
+    }
+
+    startWhenReady();
+</script>
+{% endblock %}

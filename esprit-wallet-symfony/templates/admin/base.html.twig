@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Esprit Wallet Admin{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --secondary: #10B981;
+            --bg-color: #0F172A;
+            --surface: #1E293B;
+            --surface-hover: #334155;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: rgba(255, 255, 255, 0.1);
+            --danger: #EF4444;
+            --warning: #F59E0B;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphic Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1rem;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 3rem;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, #4F46E5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 0.75rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            gap: 1rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transform: translateX(5px);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 2rem 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.1), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.05), transparent 40%);
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.4);
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #F87171; }
+        .badge-info { background: rgba(56, 189, 248, 0.2); color: #7DD3FC; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+            .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #F87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        .btn-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .btn-success:hover { background: var(--secondary); color: white; }
+        
+        .btn-sm {
+                padding: 0.25rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            .flash-messages {
+                margin-bottom: 1rem;
+            }
+            .flash-success {
+                background: rgba(16, 185, 129, 0.2);
+                border: 1px solid #10B981;
+                color: #34D399;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            /* Turbo Progress Bar */
+            .turbo-progress-bar {
+                height: 3px;
+                background-color: var(--primary);
+                background-image: linear-gradient(to right, var(--primary), var(--secondary));
+            }
+        </style>
+        
+        <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js" defer></script>
+        
+        {% block stylesheets %}{% endblock %}
+    </head>
+<body>
+
+    <aside class="sidebar">
+        <a href="{{ path('admin_dashboard') }}" style="text-decoration: none;">
+            <div class="sidebar-brand">
+                <i class="fas fa-wallet"></i> Esprit Admin
+            </div>
+        </a>
+
+        {% set active_route = app.request.attributes.get('_route') %}
+        <nav data-turbo="true">
+            <a href="{{ path('admin_dashboard') }}" class="nav-item {{ active_route == 'admin_dashboard' ? 'active' : '' }}">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="{{ path('admin_users') }}" class="nav-item {{ 'user' in active_route ? 'active' : '' }}">
+                <i class="fas fa-users"></i> Users
+            </a>
+            <a href="{{ path('admin_accounts') }}" class="nav-item {{ 'account' in active_route ? 'active' : '' }}">
+                <i class="fas fa-building-columns"></i> Accounts
+            </a>
+            <a href="{{ path('admin_cheques') }}" class="nav-item {{ 'cheque' in active_route ? 'active' : '' }}">
+                <i class="fas fa-money-check-dollar"></i> Cheques
+            </a>
+            <a href="{{ path('admin_complaints') }}" class="nav-item {{ 'complaint' in active_route ? 'active' : '' }}">
+                <i class="fas fa-headset"></i> Complaints
+            </a>
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <a href="{{ path('user_dashboard') }}" class="nav-item" style="color: var(--secondary);">
+                    <i class="fas fa-arrow-left"></i> Exit to Portal
+                </a>
+                <a href="{{ path('app_logout') }}" data-turbo="false" class="nav-item" style="color: #F87171;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="user-menu">
+                <div class="avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span>{{ app.user ? app.user.firstName ~ ' ' ~ app.user.lastName : 'Admin' }}</span>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <div class="flash-messages">
+                {% for message in app.flashes('success') %}
+                    <div class="flash-success">
+                        <i class="fas fa-check-circle"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% block body %}{% endblock %}
+        </div>
+    </main>
+
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

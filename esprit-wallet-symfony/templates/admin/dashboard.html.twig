@@ -1,0 +1,108 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Dashboard | Esprit Admin{% endblock %}
+{% block page_title %}Overview{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        border-radius: 1rem;
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255,255,255,0.2);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .stat-icon.users { background: linear-gradient(135deg, #4F46E5, #818CF8); }
+    .stat-icon.accounts { background: linear-gradient(135deg, #059669, #34D399); }
+    .stat-icon.cheques { background: linear-gradient(135deg, #D97706, #FBBF24); }
+    .stat-icon.complaints { background: linear-gradient(135deg, #DC2626, #F87171); }
+
+    .stat-details h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .stat-details p {
+        margin: 0.25rem 0 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon users"><i class="fas fa-users"></i></div>
+            <div class="stat-details">
+                <h3>Total Users</h3>
+                <p>{{ stats.users }}</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon accounts"><i class="fas fa-building-columns"></i></div>
+            <div class="stat-details">
+                <h3>Active Accounts</h3>
+                <p>{{ stats.accounts }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon cheques"><i class="fas fa-money-check-dollar"></i></div>
+            <div class="stat-details">
+                <h3>Digital Cheques</h3>
+                <p>{{ stats.cheques }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon complaints"><i class="fas fa-headset"></i></div>
+            <div class="stat-details">
+                <h3>Complaints</h3>
+                <p>{{ stats.complaints }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="glass-card">
+        <h2>Welcome to the Premium Dashboard</h2>
+        <p style="color: var(--text-muted); line-height: 1.6;">
+            This modern, standalone admin dashboard replaces the legacy EasyAdmin setup. 
+            It is built from the ground up with custom controllers, vanilla CSS with a glassmorphic aesthetic, 
+            and complete CRUD scaffolding. Navigate through the sidebar menus for managing users, accounts, cheques, and complaints.
+        </p>
+    </div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Update Complaint | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-12">
+    <div class="bg-white rounded-3xl overflow-hidden border card-shadow flex flex-col relative">
+        <div class="bg-amber-500 px-10 py-12 text-white flex items-center gap-10">
+            <div class="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center text-white text-5xl">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-4xl font-black uppercase tracking-tight mb-2">Update Complaint</h1>
+                <p class="text-white/80 font-medium tracking-wide">Modify your complaint below. Note: You can only edit unresolved complaints.</p>
+            </div>
+            <div class="hidden xl:block">
+                <i class="fa-solid fa-pen text-7xl opacity-10"></i>
+            </div>
+        </div>
+
+        {{ include('complaint/_form.html.twig', {
+            'button_label': 'Save Changes', 
+            'button_icon': 'fa-check',
+            'button_color': 'bg-amber-500 hover:bg-amber-600'
+        }) }}
+        
+        <div class="absolute bottom-6 right-6">
+            <form method="post" action="{{ path('app_complaint_delete', {'id': complaint.id}) }}" onsubmit="return confirm('CRITICAL WARNING: Are you sure you want to permanently delete this complaint ticket? This action cannot be undone.');">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ complaint.id) }}">
+                <button type="submit" class="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition group border border-red-100" title="Delete Ticket">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-slate-50 p-6 flex items-center justify-center gap-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest border-t">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-clock text-amber-500"></i> Edit Mode enabled</span>
+            <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-primary"></i> Data Securely Saved</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

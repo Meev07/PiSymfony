@@ -1,0 +1,38 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Create Digital Cheque | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-12">
+    <div class="bg-white rounded-3xl p-10 border card-shadow">
+        <div class="flex items-center gap-6 mb-10 border-b pb-8">
+            <div class="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 text-3xl">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tight">Generate Digital Cheque</h1>
+                <p class="text-slate-500 font-medium">Issue a secure digital cheque. The recipient can redeem it using their ESPRIT Wallet.</p>
+            </div>
+        </div>
+
+        {{ include('cheque/_form.html.twig') }}
+        
+        <div class="mt-12 bg-slate-50 p-8 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center border border-slate-100">
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    What happens next?
+                </h4>
+                <ul class="text-xs text-slate-500 space-y-3 font-bold uppercase tracking-tight opacity-70">
+                    <li><span class="text-slate-800">1.</span> We generate a unique cryptographic token for this cheque.</li>
+                    <li><span class="text-slate-800">2.</span> You can share the cheque serial number with the recipient.</li>
+                    <li><span class="text-slate-800">3.</span> The amount is temporarily held in your primary account.</li>
+                </ul>
+            </div>
+            <div class="text-center md:text-right">
+                <i class="fa-solid fa-shield-halved text-5xl text-slate-200"></i>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

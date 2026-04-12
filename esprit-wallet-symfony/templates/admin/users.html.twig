@@ -1,0 +1,103 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Manage Users | Esprit Admin{% endblock %}
+{% block page_title %}Users Directory{% endblock %}
+
+{% block body %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;">Registered Users</h2>
+        <a href="{{ path('admin_user_new') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add User</a>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Verified</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="{{ not user.isActive ? 'background: rgba(239, 68, 68, 0.05);' : '' }}">
+                    <td>#{{ user.id }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="avatar" style="width: 32px; height: 32px; font-size: 0.8rem; {{ not user.isActive ? 'filter: grayscale(1);' : '' }}">
+                                {{ user.firstName|first|upper }}{{ user.lastName|first|upper }}
+                            </div>
+                            <span style="{{ not user.isActive ? 'color: var(--text-muted);' : '' }}">
+                                {{ user.firstName }} {{ user.lastName }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if user.isActive %}
+                            <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                <i class="fas fa-user-check"></i> Active
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                <i class="fas fa-user-slash"></i> Blocked
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.isVerified %}
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>
+                        {% else %}
+                            <span class="badge badge-warning">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if 'ROLE_ADMIN' in user.roles %}
+                            <span class="badge badge-danger">Admin</span>
+                        {% else %}
+                            <span class="badge badge-info">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: white;" title="Edit User">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            
+                            <form method="post" action="{{ path('admin_user_toggle_status', {'id': user.id}) }}" style="display: inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                                {% if user.isActive %}
+                                    <button class="btn btn-sm" type="submit" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);" title="Block User">
+                                        <i class="fas fa-ban"></i> Block
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm" type="submit" style="background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2);" title="Unblock User">
+                                        <i class="fas fa-unlock"></i> Unblock
+                                    </button>
+                                {% endif %}
+                            </form>
+
+                            <form method="post" action="{{ path('admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Are you sure you want to permanently delete this user?');" style="display: inline;">
+                                <button class="btn btn-danger btn-sm" type="submit" title="Delete User">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No users found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

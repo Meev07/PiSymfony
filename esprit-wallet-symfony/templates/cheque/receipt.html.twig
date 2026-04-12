@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt — {{ cheque.chequeNumber }} | ESPRIT WALLET</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .receipt {
+            background: #ffffff;
+            width: 680px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+        }
+
+        /* ── Gradient top bar ── */
+        .receipt__bar {
+            height: 10px;
+            background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 55%, #8b5cf6 100%);
+        }
+
+        /* ── Header ── */
+        .receipt__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 32px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .receipt__logo-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .receipt__logo-icon {
+            width: 50px;
+            height: 50px;
+            background: #0f172a;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .receipt__brand {
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .receipt__brand-sub {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+        .receipt__header-meta {
+            text-align: right;
+        }
+        .receipt__header-meta .label {
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .receipt__header-meta .value {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            margin-top: 3px;
+        }
+
+        /* ── Title banner ── */
+        .receipt__title-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #fff;
+            padding: 26px 32px;
+            text-align: center;
+        }
+        .receipt__title-banner h1 {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .receipt__title-banner p {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        /* ── Amount hero ── */
+        .receipt__amount {
+            margin: 24px 32px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px dashed #bae6fd;
+            border-radius: 16px;
+            padding: 22px 28px;
+            text-align: center;
+        }
+        .receipt__amount .a-label {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.28em;
+            color: #0ea5e9;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .receipt__amount .a-value {
+            font-size: 48px;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1;
+        }
+        .receipt__amount .a-currency {
+            font-size: 22px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        /* ── Details grid ── */
+        .receipt__grid {
+            margin: 0 32px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .receipt__grid-item {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+        }
+        .receipt__grid-item:nth-child(even) { border-right: none; }
+        .receipt__grid-item:nth-last-child(-n+2) { border-bottom: none; }
+        .receipt__grid-item .g-label {
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .receipt__grid-item .g-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .g-value--green  { color: #10b981; text-transform: uppercase; }
+        .g-value--red    { color: #ef4444; }
+
+        /* ── Security token ── */
+        .receipt__token {
+            margin: 24px 32px 0;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 16px;
+            padding: 20px 24px;
+        }
+        .receipt__token .t-label {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            color: #475569;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .receipt__token .t-value {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fbbf24;
+            word-break: break-all;
+            letter-spacing: 0.04em;
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+        .receipt__token .t-warn {
+            font-size: 8.5px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            line-height: 1.6;
+        }
+
+        /* ── Notice ── */
+        .receipt__notice {
+            margin: 20px 32px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 12px;
+            color: #78350f;
+            line-height: 1.7;
+        }
+
+        /* ── Footer ── */
+        .receipt__footer {
+            padding: 20px 32px 28px;
+            text-align: center;
+            border-top: 2px dashed #e2e8f0;
+            margin: 0 32px;
+        }
+        .receipt__footer-brand {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .receipt__footer-sub {
+            font-size: 8px;
+            color: #cbd5e1;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* ── Print button (screen only) ── */
+        .receipt__print-btn {
+            display: block;
+            margin: 24px auto 32px;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+            transition: opacity 0.2s;
+        }
+        .receipt__print-btn:hover { opacity: 0.9; }
+
+        /* ── Print media ── */
+        @media print {
+            @page { size: A4; margin: 10mm 15mm; }
+            body {
+                background: #fff !important;
+                padding: 0 !important;
+            }
+            .receipt {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                width: 100% !important;
+            }
+            .receipt__print-btn { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="receipt">
+
+    {# Gradient bar #}
+    <div class="receipt__bar"></div>
+
+    {# Header #}
+    <div class="receipt__header">
+        <div class="receipt__logo-row">
+            <div class="receipt__logo-icon">🛡</div>
+            <div>
+                <div class="receipt__brand">ESPRIT WALLET</div>
+                <div class="receipt__brand-sub">Secure Digital Finance</div>
+            </div>
+        </div>
+        <div class="receipt__header-meta">
+            <div class="label">Printed</div>
+            <div class="value">{{ printedAt|date('d M Y — H:i') }}</div>
+        </div>
+    </div>
+
+    {# Title banner #}
+    <div class="receipt__title-banner">
+        <h1>Security Certificate</h1>
+        <p>Official Digital Cheque Receipt</p>
+    </div>
+
+    {# Amount hero #}
+    <div class="receipt__amount">
+        <div class="a-label">Face Value</div>
+        <div class="a-value">
+            {{ cheque.amount|number_format(2, '.', ',') }}
+            <span class="a-currency">TND</span>
+        </div>
+    </div>
+
+    {# Details grid #}
+    <div class="receipt__grid">
+        <div class="receipt__grid-item">
+            <div class="g-label">Reference Number</div>
+            <div class="g-value">{{ cheque.chequeNumber }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Status</div>
+            <div class="g-value g-value--green">{{ cheque.status }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Issuer (Sender)</div>
+            <div class="g-value">{{ cheque.sender.firstName }} {{ cheque.sender.lastName }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Issued To</div>
+            <div class="g-value">{{ cheque.receiverIban|default('Standard Bearer') }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Creation Date</div>
+            <div class="g-value">{{ cheque.createdAt|date('d/m/Y  H:i') }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Expiration Date</div>
+            <div class="g-value g-value--red">{{ cheque.expirationDate|date('d/m/Y  H:i') }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Issuer Email</div>
+            <div class="g-value">{{ cheque.sender.email }}</div>
+        </div>
+        <div class="receipt__grid-item">
+            <div class="g-label">Document Type</div>
+            <div class="g-value">Digital Cheque</div>
+        </div>
+    </div>
+
+    {# Security token #}
+    <div class="receipt__token">
+        <div class="t-label">🔑 Movable Security Token</div>
+        <div class="t-value">{{ cheque.secureToken }}</div>
+        <div class="t-warn">
+            ⚠ CONFIDENTIAL — Share exclusively with the intended recipient.<br>
+            This token is required to complete the fund redemption process.
+        </div>
+    </div>
+
+    {# Notice #}
+    <div class="receipt__notice">
+        <strong>📌 Important:</strong> The amount of <strong>{{ cheque.amount|number_format(2, '.', ',') }} TND</strong>
+        has been temporarily locked in the issuer's wallet and will be released to the recipient
+        upon completing the redemption process using the security token above.
+    </div>
+
+    {# Footer #}
+    <div class="receipt__footer">
+        <div class="receipt__footer-brand">
+            ESPRIT WALLET &nbsp;·&nbsp; Secure Digital Finance Platform &nbsp;·&nbsp; V1.0-STABLE
+        </div>
+        <div class="receipt__footer-sub">
+            This document is computer-generated and constitutes an official transaction receipt. Ref: {{ cheque.chequeNumber }}
+        </div>
+    </div>
+
+</div>{# end .receipt #}
+
+{# Print trigger button (hidden in print mode) #}
+<button class="receipt__print-btn" onclick="window.print()">
+    🖨 Print / Save as PDF
+</button>
+
+<script>
+    // Auto-trigger print dialog when this page loads
+    window.addEventListener('load', function () {
+        setTimeout(function () { window.print(); }, 500);
+    });
+</script>
+</body>
+</html>

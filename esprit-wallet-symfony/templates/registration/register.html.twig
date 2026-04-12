@@ -1,0 +1,143 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fintech Registration | ESPRIT WALLET{% endblock %}
+
+{% block body %}
+<div class="flex-1 flex flex-col lg:flex-row-reverse h-screen overflow-hidden">
+    <!-- Branding Side -->
+    <div class="hidden lg:flex flex-col flex-1 gradient-bg p-12 text-white relative">
+        <div class="relative z-10 flex flex-col h-full">
+            <div class="text-3xl font-black uppercase tracking-widest flex items-center gap-4">
+                <i class="fa-solid fa-wallet text-4xl"></i>
+                Esprit Wallet
+            </div>
+            <div class="flex-1 flex flex-col justify-center">
+                <h1 class="text-6xl font-black uppercase leading-tight tracking-tighter mb-6">Financial <br> Freedom <br> Awaits</h1>
+                <p class="text-lg text-white/70 max-w-md font-medium font-mono text-xs uppercase tracking-tighter">Enter the world of digital cheques and automated complaints. One platform for all your university finances.</p>
+            </div>
+            <div class="flex items-center gap-8 py-8 opacity-50 font-black text-xs uppercase tracking-widest font-mono">
+                <span>Verified <i class="fa-solid fa-circle-check text-emerald-300"></i></span>
+                <span>Encrypted <i class="fa-solid fa-lock text-emerald-300"></i></span>
+                <span>Fast <i class="fa-solid fa-bolt text-emerald-300"></i></span>
+            </div>
+        </div>
+        <!-- Decorative Elements -->
+        <div class="absolute -left-20 bottom-32 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute left-20 top-20 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+    </div>
+
+    <!-- Auth Side -->
+    <div class="flex-1 flex items-center justify-center bg-white p-8">
+        <div class="max-w-md w-full">
+            <div class="mb-10 lg:hidden text-center">
+                 <div class="text-primary text-5xl mb-4"><i class="fa-solid fa-wallet"></i></div>
+                 <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Esprit Wallet</h2>
+            </div>
+            <div class="">
+                <h2 class="text-3xl font-black text-slate-800 uppercase tracking-tight mb-2">Join the future</h2>
+                <p class="text-slate-500 font-medium tracking-tight mb-8">Register as an internal user to begin managing your assets.</p>
+            </div>
+
+            {{ form_start(registrationForm, {'attr': {'novalidate': 'novalidate'}}) }}
+                <div class="space-y-6">
+                        <div class="space-y-2">
+                             <div class="flex items-center justify-between px-3">
+                                <label class="block text-[9px] uppercase font-black text-slate-400 tracking-widest">First Name</label>
+                                {% if form_errors(registrationForm.firstName) %}
+                                    <span class="text-[9px] font-black text-red-500 uppercase tracking-widest animate-pulse">
+                                        <i class="fa-solid fa-circle-exclamation mr-1"></i> Error
+                                    </span>
+                                {% endif %}
+                             </div>
+                             {{ form_widget(registrationForm.firstName, {
+                                 'attr': {
+                                     'class': 'w-full ' ~ (form_errors(registrationForm.firstName) ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100') ~ ' outline-none p-4 rounded-2xl font-bold text-slate-700 text-sm focus:ring-2 ring-primary transition border shadow-sm',
+                                 }
+                             }) }}
+                             <div class="px-3 text-red-500 text-[10px] uppercase font-black tracking-widest">
+                                {{ form_errors(registrationForm.firstName) }}
+                             </div>
+                        </div>
+                        <div class="space-y-2">
+                             <div class="flex items-center justify-between px-3">
+                                <label class="block text-[9px] uppercase font-black text-slate-400 tracking-widest">Last Name</label>
+                                {% if form_errors(registrationForm.lastName) %}
+                                    <span class="text-[9px] font-black text-red-500 uppercase tracking-widest animate-pulse">
+                                        <i class="fa-solid fa-circle-exclamation mr-1"></i> Error
+                                    </span>
+                                {% endif %}
+                             </div>
+                             {{ form_widget(registrationForm.lastName, {
+                                 'attr': {
+                                     'class': 'w-full ' ~ (form_errors(registrationForm.lastName) ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100') ~ ' outline-none p-4 rounded-2xl font-bold text-slate-700 text-sm focus:ring-2 ring-primary transition border shadow-sm',
+                                 }
+                             }) }}
+                             <div class="px-3 text-red-500 text-[10px] uppercase font-black tracking-widest">
+                                {{ form_errors(registrationForm.lastName) }}
+                             </div>
+                        </div>
+
+                    <div class="space-y-2">
+                         <div class="flex items-center justify-between px-3">
+                            <label class="block uppercase font-black text-slate-400 tracking-widest text-[9px]">Institutional Email</label>
+                            {% if form_errors(registrationForm.email) %}
+                                <span class="text-[9px] font-black text-red-500 uppercase tracking-widest animate-pulse">
+                                    <i class="fa-solid fa-envelope-circle-check mr-1"></i> Invalid
+                                </span>
+                            {% endif %}
+                         </div>
+                         {{ form_widget(registrationForm.email, {'attr': {'class': 'w-full ' ~ (form_errors(registrationForm.email) ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100') ~ ' outline-none p-4 rounded-2xl font-bold text-slate-700 text-sm focus:ring-2 ring-primary transition border shadow-sm'}}) }}
+                         <div class="px-3 text-red-500 text-[10px] uppercase font-black tracking-widest">
+                            {{ form_errors(registrationForm.email) }}
+                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                             <div class="flex items-center justify-between px-3">
+                                <label class="block uppercase font-black text-slate-400 tracking-widest text-[9px]">Private Password</label>
+                             </div>
+                             {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'w-full ' ~ (form_errors(registrationForm.plainPassword.first) ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100') ~ ' outline-none p-4 rounded-2xl font-bold text-slate-700 text-sm focus:ring-2 ring-primary transition border shadow-sm'}}) }}
+                        </div>
+                        <div class="space-y-2">
+                             <div class="flex items-center justify-between px-3">
+                                <label class="block uppercase font-black text-slate-400 tracking-widest text-[9px]">Confirm Password</label>
+                             </div>
+                             {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'w-full bg-slate-50 border border-slate-100 outline-none p-4 rounded-2xl font-bold text-slate-700 text-sm focus:ring-2 ring-primary transition border shadow-sm'}}) }}
+                        </div>
+                    </div>
+                    {% if form_errors(registrationForm.plainPassword.first) %}
+                        <div class="px-3">
+                            <span class="text-red-500 font-bold mt-1 text-[10px] uppercase tracking-widest flex flex-col gap-1">
+                                {{ form_errors(registrationForm.plainPassword.first) }}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-3 pl-3">
+                             {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': 'w-5 h-5 accent-primary rounded-lg cursor-pointer'}}) }}
+                             <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest leading-none">I agree to security terms</label>
+                        </div>
+                        <div class="px-3 text-red-500 text-[10px] uppercase font-black tracking-widest">
+                            {{ form_errors(registrationForm.agreeTerms) }}
+                        </div>
+                    </div>
+
+                    <button class="w-full gradient-bg text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:shadow-lg transition flex items-center justify-center gap-3 shadow-xl">
+                        <i class="fa-solid fa-user-plus"></i> Create Account
+                    </button>
+                    
+                    <div class="text-center pt-8 border-t">
+                        <p class="text-sm font-medium text-slate-500">Already part of ESPRIT wallet?</p>
+                        <a href="{{ path('app_login') }}" class="inline-block mt-4 text-primary font-black uppercase tracking-widest text-xs border-b-2 border-primary/20 hover:border-primary transition pb-1">Sign In to Dashboard</a>
+                    </div>
+                </div>
+                <style>
+                    .text-red-500 ul { list-style: none; padding: 0; margin: 0; }
+                </style>
+            {{ form_end(registrationForm) }}
+        </div>
+    </div>
+</div>
+{% endblock %}

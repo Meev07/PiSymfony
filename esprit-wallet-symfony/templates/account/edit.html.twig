@@ -1,0 +1,26 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Edit Account | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-12">
+    <div class="bg-white rounded-3xl p-10 border card-shadow">
+        <div class="flex items-center gap-6 mb-10 border-b pb-8 hover:bg-slate-50 transition rounded-2xl cursor-pointer">
+            <div class="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-500 text-3xl">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tight">Edit Account</h1>
+                <p class="text-slate-500 font-medium font-mono text-sm uppercase">Updating profile for: {{ account.accountNumber }}</p>
+            </div>
+        </div>
+
+        {{ include('account/_form.html.twig', {'button_label': 'Update Financial Record'}) }}
+        
+        <div class="mt-12 pt-8 border-t flex flex-col items-center gap-4 text-center">
+            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest max-w-sm italic opacity-70">Warning: Freezing or closing an account is immediate. Ensure all pending transactions are settled before making major status changes.</p>
+            {{ include('account/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
+{% endblock %}

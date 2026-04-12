@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .email-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #f8fafc;
+            border-radius: 24px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+        .code-container {
+            background-color: #f1f5f9;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 32px 0;
+            border: 2px dashed #0ea5e9;
+        }
+        .code {
+            font-size: 40px;
+            font-weight: 900;
+            color: #0ea5e9;
+            letter-spacing: 8px;
+            margin: 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 12px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">ESPRIT WALLET</div>
+        </div>
+        <div class="content">
+            <div class="title">Verify Your Account</div>
+            <p>Welcome to ESPRIT Wallet, <strong>{{ user.firstName }}</strong>!</p>
+            <p>To complete your registration and start managing your assets, please use the following verification code:</p>
+            
+            <div class="code-container">
+                <div class="code">{{ code }}</div>
+            </div>
+            
+            <p style="font-size: 14px; color: #64748b;">This code will expire in 24 hours. If you did not create an account with us, please ignore this email.</p>
+        </div>
+        <div class="footer">
+            &copy; {{ "now"|date("Y") }} ESPRIT Wallet Security Team. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

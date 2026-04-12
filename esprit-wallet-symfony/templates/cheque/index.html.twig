@@ -1,0 +1,150 @@
+{% extends 'app_layout.html.twig' %}
+
+{% block title %}Digital Chequebook | ESPRIT WALLET{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-6">
+    <h1 class="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-4 uppercase">
+        <div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
+            <i class="fa-solid fa-money-check-dollar"></i>
+        </div>
+        My Digital Cheques
+    </h1>
+    <div class="flex flex-wrap items-center gap-3">
+        <a href="{{ path('app_cheque_scan') }}" class="px-6 py-3.5 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition-all flex items-center gap-2.5 text-xs uppercase tracking-widest shadow-xl shadow-slate-200">
+            <i class="fa-solid fa-expand text-primary"></i> AI Scan & Redeem
+        </a>
+        <a href="{{ path('app_cheque_new') }}" class="px-6 py-3.5 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark transition-all flex items-center gap-2.5 text-xs uppercase tracking-widest shadow-xl shadow-primary/20">
+            <i class="fa-solid fa-plus-circle"></i> Create Cheque
+        </a>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<div class="flex items-center gap-2 mb-6 bg-slate-100/50 p-1.5 rounded-2xl w-fit border border-slate-200/50">
+    <button onclick="switchTab('sent')" id="tab-sent" class="px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all tab-btn active">
+        Issued Cheques
+        <span class="ml-2 px-1.5 py-0.5 bg-slate-200 rounded-md text-slate-500">{{ sent_cheques|length }}</span>
+    </button>
+    <button onclick="switchTab('received')" id="tab-received" class="px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all tab-btn">
+        Redeemed via OCR
+        <span class="ml-2 px-1.5 py-0.5 bg-slate-200 rounded-md text-slate-500">{{ received_cheques|length }}</span>
+    </button>
+</div>
+
+<!-- Sent Cheques Table -->
+<div id="content-sent" class="tab-content">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl shadow-slate-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50/50 border-b border-slate-100">
+                <tr class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <th class="px-8 py-5">Status</th>
+                    <th class="py-5">Identifier</th>
+                    <th class="py-5">Recipient</th>
+                    <th class="py-5">Issuance</th>
+                    <th class="py-5 text-right pr-8">Amount</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50 text-sm">
+                {% for cheque in sent_cheques %}
+                    <tr class="group hover:bg-slate-50/80 transition-colors">
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1.5 rounded-xl font-black text-[8px] uppercase tracking-widest border
+                                {{ cheque.status == 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                                   cheque.status == 'REDEEMED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                                   cheque.status == 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-500 border-slate-100' }}">
+                                {{ cheque.status }}
+                            </span>
+                        </td>
+                        <td class="py-6">
+                            <span class="font-mono text-slate-800 font-bold tracking-tighter">{{ cheque.chequeNumber }}</span>
+                        </td>
+                        <td class="py-6">
+                            {% if cheque.receiver %}
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-[10px]">
+                                        {{ cheque.receiver.firstName|first }}{{ cheque.receiver.lastName|first }}
+                                    </div>
+                                    <span class="font-bold text-slate-700">{{ cheque.receiver.fullName }}</span>
+                                </div>
+                            {% else %}
+                                <span class="text-slate-400 font-medium italic">Pending Redemption</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-6 text-slate-500 font-bold text-xs">{{ cheque.createdAt|date('d M Y') }}</td>
+                        <td class="py-6 text-right pr-8">
+                            <span class="text-lg font-black text-slate-900">{{ cheque.amount }} <span class="text-[10px] text-slate-400 ml-0.5">TND</span></span>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="py-20 text-center text-slate-300 font-black uppercase tracking-[0.3em] text-[10px]">No issued cheques</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Received Cheques Table (Hidden by default) -->
+<div id="content-received" class="tab-content hidden">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl shadow-slate-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-indigo-50/30 border-b border-indigo-100/50">
+                <tr class="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400/70">
+                    <th class="px-8 py-5">Verification</th>
+                    <th class="py-5">Reference</th>
+                    <th class="py-5">Sender Source</th>
+                    <th class="py-5">Scan Date</th>
+                    <th class="py-5 text-right pr-8">Recovered Funds</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50 text-sm">
+                {% for cheque in received_cheques %}
+                    <tr class="group hover:bg-slate-50/80 transition-colors">
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1.5 rounded-xl font-black text-[8px] uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-200">
+                                <i class="fa-solid fa-check-double mr-1"></i> VERIFIED
+                            </span>
+                        </td>
+                        <td class="py-6 font-mono text-slate-800 font-bold tracking-tighter">{{ cheque.chequeNumber }}</td>
+                        <td class="py-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 font-black text-[10px]">
+                                    <i class="fa-solid fa-user-shield"></i>
+                                </div>
+                                <span class="font-bold text-slate-700">{{ cheque.sender.fullName }}</span>
+                            </div>
+                        </td>
+                        <td class="py-6 text-slate-500 font-bold text-xs">{{ cheque.createdAt|date('d M Y') }}</td>
+                        <td class="py-6 text-right pr-8">
+                            <span class="text-lg font-black text-emerald-600">{{ cheque.amount }} <span class="text-[10px] opacity-50 ml-0.5">TND</span></span>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="py-20 text-center text-slate-300 font-black uppercase tracking-[0.3em] text-[10px]">No received cheques via OCR yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .tab-btn.active {
+        @apply bg-white text-slate-900 shadow-sm border border-slate-200;
+    }
+    .tab-btn:not(.active) {
+        @apply text-slate-400 hover:text-slate-600;
+    }
+</style>
+
+<script>
+function switchTab(tab) {
+    // Buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'bg-white', 'text-slate-900', 'shadow-sm', 'border', 'border-slate-200'));
+    document.getElementById('tab-' + tab).classList.add('active', 'bg-white', 'text-slate-900', 'shadow-sm', 'border', 'border-slate-200');
+    
+    // Content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    document.getElementById('content-' + tab).classList.remove('hidden');
+}
+</script>
+{% endblock %}

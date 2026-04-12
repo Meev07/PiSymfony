@@ -1,0 +1,41 @@
+{{ form_start(form) }}
+    <div class="space-y-6">
+        <div class="p-6 {{ form_errors(form.balance) ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100' }} border rounded-2xl space-y-4">
+            <div class="flex items-center justify-between px-3">
+                <label class="block text-xs uppercase font-black text-slate-400 tracking-widest">Initial Deposit (TND)</label>
+                {% if form_errors(form.balance) %}
+                    <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Invalid Entry
+                    </span>
+                {% endif %}
+            </div>
+            {{ form_widget(form.balance, {
+                'attr': {
+                    'class': 'w-full bg-white border border-slate-200 outline-none p-4 rounded-2xl font-black text-2xl text-slate-800 focus:ring-2 ring-primary transition',
+                    'oninput': "this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1');",
+                    'autocomplete': 'off'
+                }
+            }) }}
+            {{ form_errors(form.balance, {'attr': {'class': 'text-red-500 font-bold mt-1 text-[10px] pl-3'}}) }}
+        </div>
+
+        <div class="p-6 {{ form_errors(form.type) ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100' }} border rounded-2xl space-y-4">
+            <div class="flex items-center justify-between px-3">
+                <label class="block text-xs uppercase font-black text-slate-400 tracking-widest">Account Category</label>
+                {% if form_errors(form.type) %}
+                    <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">Required</span>
+                {% endif %}
+            </div>
+            {{ form_widget(form.type, {'attr': {'class': 'w-full bg-white border border-slate-200 outline-none p-4 rounded-2xl font-bold text-slate-700'}}) }}
+        </div>
+
+        <div class="flex items-center gap-4 pt-6">
+            <button class="flex-1 gradient-bg text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:shadow-lg transition">
+                <i class="fa-solid fa-save mr-2"></i> {{ button_label|default('Create Account') }}
+            </button>
+            <a href="{{ path('app_account_index') }}" class="px-8 py-4 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl font-bold transition">
+                Cancel
+            </a>
+        </div>
+    </div>
+{{ form_end(form) }}
