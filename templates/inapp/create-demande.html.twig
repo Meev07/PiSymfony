@@ -23,18 +23,18 @@
   <!-- SIDEBAR -->
   <aside id="sidebar" class="sidebar">
     <div class="logo-area">
-      <a href="index.html" class="d-inline-flex lh-sm">
+      <a href="{{ path('app_template_page', {'page': 'credit'}) }}" class="d-inline-flex lh-sm">
         <span class="fw-bold fs-5 text-primary">Esprit Wallet</span>
       </a>
     </div>
     <ul class="nav flex-column">
       <li class="px-4 py-2"><small class="nav-text">Main</small></li>
-      <li><a class="nav-link" href="credit.html"><i class="ti ti-box-seam"></i><span
+      <li><a class="nav-link" href="{{ path('app_template_page', {'page': 'credit'}) }}"><i class="ti ti-box-seam"></i><span
         class="nav-text">Credit</span></a></li>
-      <li><a class="nav-link" href="create-demande.html"><i class="ti ti-plus"></i><span class="nav-text">Ajouter
+      <li><a class="nav-link" href="{{ path('app_template_page', {'page': 'create-demande'}) }}"><i class="ti ti-plus"></i><span class="nav-text">Ajouter
         demande</span></a></li>
 
-  <li><a class="nav-link" href="signin.html"><i class="ti ti-logout"></i><span class="nav-text">Log out</span></a></li>
+  <li><a class="nav-link" href="{{ path('app_signin') }}"><i class="ti ti-logout"></i><span class="nav-text">Log out</span></a></li>
     </ul>
 
   </aside>
@@ -50,7 +50,7 @@
               <p class="mb-0">Remplir ce formulaire</p>
             </div>
             <div>
-              <a href="credit.html" class="btn btn-primary">Allez vers liste des demandes</a>
+              <a href="{{ path('app_template_page', {'page': 'credit'}) }}" class="btn btn-primary">Allez vers liste des demandes</a>
             </div>
           </div>
         </div>
@@ -59,6 +59,20 @@
         <div class="col-12">
           <div class="card">
             <div class="card-body p-4">
+              {% if successMessage %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                  <strong>Succès!</strong> {{ successMessage }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endif %}
+
+              {% if errorMessage %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <strong>Erreur!</strong> {{ errorMessage }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endif %}
+
               {% if error %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                   <strong>Erreur!</strong> {{ error }}
@@ -73,21 +87,21 @@
                 </div>
               {% endif %}
 
-              <form method="POST" action="{{ path('app_create_demande_submit') }}" id="createCreditForm">
+              {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'createCreditForm'}}) }}
                 <!-- Montant du crédit -->
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label for="montantDemande" class="form-label">Montant du crédit demandé (DT) <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" id="montantDemande" name="montant_demande" 
-                           placeholder="Entrez le montant" step="0.01" min="100" max="500000" required>
+                    {{ form_label(form.montant_demande) }}<span class="text-danger"> *</span>
+                    {{ form_widget(form.montant_demande) }}
+                    {{ form_errors(form.montant_demande) }}
                     <small class="text-muted">Minimum: 100 DT, Maximum: 500 000 DT</small>
                   </div>
-                  
+
                   <!-- Durée du crédit -->
                   <div class="col-md-6 mb-3">
-                    <label for="dureeMois" class="form-label">Durée du crédit (mois) <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" id="dureeMois" name="duree_mois" 
-                           placeholder="Nombre de mois" min="1" max="360" required>
+                    {{ form_label(form.duree_mois) }}<span class="text-danger"> *</span>
+                    {{ form_widget(form.duree_mois) }}
+                    {{ form_errors(form.duree_mois) }}
                     <small class="text-muted">Entre 1 et 360 mois</small>
                   </div>
                 </div>
@@ -95,16 +109,16 @@
                 <!-- Taux d'intérêt -->
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label for="tauxInteret" class="form-label">Taux d'intérêt annuel (%) <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" id="tauxInteret" name="taux_interet" 
-                           value="13" step="0.01" readonly>
+                    {{ form_label(form.taux_interet) }}<span class="text-danger"> *</span>
+                    {{ form_widget(form.taux_interet) }}
+                    {{ form_errors(form.taux_interet) }}
                     <small class="text-muted">Taux fixe: 13% par an</small>
                   </div>
-                  
-                  <!-- Montant mensuel calculé -->
+
+                  <!-- Montant mensuel calculé (champ d'affichage uniquement, hors FormType) -->
                   <div class="col-md-6 mb-3">
                     <label for="montantMensuel" class="form-label">Montant mensuel estimé (DT)</label>
-                    <input type="number" class="form-control" id="montantMensuel" name="montant_mensuel" 
+                    <input type="number" class="form-control" id="montantMensuel"
                            placeholder="Calculé automatiquement" step="0.01" readonly>
                     <small class="text-muted">Calculé en fonction des paramètres</small>
                   </div>
@@ -112,35 +126,27 @@
 
                 <!-- Objet du crédit -->
                 <div class="mb-3">
-                  <label for="objetCredit" class="form-label">Objet du crédit <span class="text-danger">*</span></label>
-                  <select class="form-select" id="objetCredit" name="objet_credit" required>
-                    <option value="">-- Sélectionnez un objet --</option>
-                    <option value="logement">Logement</option>
-                    <option value="vehicule">Véhicule</option>
-                    <option value="education">Éducation</option>
-                    <option value="sante">Santé</option>
-                    <option value="commerce">Commerce/Affaires</option>
-                    <option value="autre">Autre</option>
-                  </select>
+                  {{ form_label(form.objet_credit) }}<span class="text-danger"> *</span>
+                  {{ form_widget(form.objet_credit) }}
+                  {{ form_errors(form.objet_credit) }}
                 </div>
 
                 <!-- Description -->
                 <div class="mb-3">
-                  <label for="description" class="form-label">Description / Justification <span class="text-danger">*</span></label>
-                  <textarea class="form-control" id="description" name="description" rows="4" 
-                           placeholder="Décrivez les raisons et détails de votre demande"
-                           minlength="10" maxlength="500" required></textarea>
+                  {{ form_label(form.description) }}<span class="text-danger"> *</span>
+                  {{ form_widget(form.description) }}
+                  {{ form_errors(form.description) }}
                   <small class="text-muted">Entre 10 et 500 caractères</small>
                 </div>
 
                 <!-- Boutons -->
                 <div class="d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+                  {{ form_widget(form.soumettre) }}
                   <button type="reset" class="btn btn-secondary">Réinitialiser</button>
-                  <a href="credit.html" class="btn btn-outline-secondary">Retour</a>
+                  <a href="{{ path('app_template_page', {'page': 'credit'}) }}" class="btn btn-outline-secondary">Retour</a>
                 </div>
 
-              </form>
+              {{ form_end(form) }}
             </div>
           </div>
 
@@ -166,9 +172,9 @@
   <script>
     // Fonction pour calculer le montant mensuel avec intérêts composés
     function calculerMontantMensuel() {
-      const montant = parseFloat(document.getElementById('montantDemande').value) || 0;
-      const duree = parseInt(document.getElementById('dureeMois').value) || 0;
-      const tauxAnnuel = parseFloat(document.getElementById('tauxInteret').value) || 0;
+      const montant = parseFloat(document.getElementById('dossier_credit_montant_demande').value) || 0;
+      const duree = parseInt(document.getElementById('dossier_credit_duree_mois').value) || 0;
+      const tauxAnnuel = parseFloat(document.getElementById('dossier_credit_taux_interet').value) || 0;
       
       if (montant > 0 && duree > 0 && tauxAnnuel >= 0) {
         // Convertir le taux annuel en taux mensuel
@@ -180,7 +186,6 @@
           monthlyPayment = montant / duree;
         } else {
           // Formule: M = P * [r(1+r)^n] / [(1+r)^n - 1]
-          // P = principal, r = taux mensuel, n = nombre de mois
           const numerateur = tauxMensuel * Math.pow(1 + tauxMensuel, duree);
           const denominateur = Math.pow(1 + tauxMensuel, duree) - 1;
           monthlyPayment = montant * (numerateur / denominateur);
@@ -193,38 +198,21 @@
     }
     
     // Écouter les changements
-    document.getElementById('montantDemande').addEventListener('input', calculerMontantMensuel);
-    document.getElementById('dureeMois').addEventListener('input', calculerMontantMensuel);
+    document.getElementById('dossier_credit_montant_demande').addEventListener('input', calculerMontantMensuel);
+    document.getElementById('dossier_credit_duree_mois').addEventListener('input', calculerMontantMensuel);
+
+    document.getElementById('createCreditForm').addEventListener('submit', function() {
+      const submitButton = document.getElementById('dossier_credit_soumettre');
+      if (!submitButton) {
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = 'Soumission...';
+    });
     
     // Calculer au chargement de la page
     window.addEventListener('load', calculerMontantMensuel);
-    
-    // Validation du formulaire
-    document.getElementById('createCreditForm').addEventListener('submit', function(e) {
-      const montant = parseFloat(document.getElementById('montantDemande').value);
-      const duree = parseInt(document.getElementById('dureeMois').value);
-      const taux = parseFloat(document.getElementById('tauxInteret').value);
-      const objet = document.getElementById('objetCredit').value;
-      const description = document.getElementById('description').value.trim();
-      
-      if (montant <= 0 || duree <= 0 || taux < 0) {
-        e.preventDefault();
-        alert('Veuillez vérifier les valeurs saisies.');
-        return false;
-      }
-      
-      if (!objet) {
-        e.preventDefault();
-        alert('Veuillez sélectionner un objet du crédit.');
-        return false;
-      }
-      
-      if (description.length < 10) {
-        e.preventDefault();
-        alert('La description doit contenir au moins 10 caractères.');
-        return false;
-      }
-    });
   </script>
 
 

@@ -2,7 +2,28 @@
 
 namespace App\Controller;
 
+use App\Entity\Credit;
+use App\Entity\DossierClient;
+use App\Entity\Echeance;
+use App\Form\CreditSearchData;
+use App\Form\CreditSearchType;
+use App\Form\DecisionDemandeData;
+use App\Form\DecisionDemandeType;
+use App\Form\DeleteDemandeData;
+use App\Form\DeleteDemandeType;
+use App\Form\DossierCreditData;
+use App\Form\RetardPredictionQueryData;
+use App\Form\RetardPredictionQueryType;
+use App\Form\DossierCreditType;
+use App\Form\EditDossierCreditData;
+use App\Form\EditDossierCreditType;
+use App\Repository\CreditRepository;
+use App\Repository\DossierClientRepository;
+use App\Repository\UserRepository;
+use App\Service\CreditNotificationService;
+use App\Service\PaymentDelayChatbotService;
 use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +44,8 @@ final class TemplateController extends AbstractController
         return $this->redirectToRoute('app_signin');
     }
 
-    #[Route('/template/signin.html', name: 'app_signin', methods: ['GET'])]
+    #[Route('/template/signin.html.twig', name: 'app_signin', methods: ['GET'])]
+    #[Route('/template/signin.html', name: 'app_signin_legacy', methods: ['GET'])]
     public function signin(Request $request): Response
     {
         return $this->render('inapp/signin.html.twig', [
@@ -31,455 +53,701 @@ final class TemplateController extends AbstractController
         ]);
     }
 
-    #[Route('/template/signin.html', name: 'app_signin_submit', methods: ['POST'])]
-    public function signinSubmit(Request $request, Connection $connection): RedirectResponse
+    #[Route('/template/signin.html.twig', name: 'app_signin_submit', methods: ['POST'])]
+    #[Route('/template/signin.html', name: 'app_signin_submit_legacy', methods: ['POST'])]
+    public function signinSubmit(Request $request, UserRepository $userRepository): RedirectResponse
     {
-        $email = trim((string) $request->request->get('email', ''));
-        $emailNormalized = mb_strtolower($email);
+        $email    = trim((string) $request->request->get('email', ''));
         $password = (string) $request->request->get('password', '');
 
         if ('' === $email || '' === $password) {
             return $this->redirectToRoute('app_signin', ['error' => 1], 303);
         }
 
-        $user = $connection->fetchAssociative(
-            'SELECT id_user, password_hash
-             FROM users
-             WHERE LOWER(TRIM(REPLACE(REPLACE(email, CHAR(13), \'\'), CHAR(10), \'\'))) = :email
-             LIMIT 1',
-            ['email' => $emailNormalized]
-        );
+        $user = $userRepository->findOneByEmail($email);
 
         if (!$user) {
             return $this->redirectToRoute('app_signin', ['error' => 1], 303);
         }
 
-        $storedPassword = (string) $user['password_hash'];
-        $isValidPassword = password_verify($password, $storedPassword) || hash_equals($storedPassword, $password);
+        $storedPassword  = (string) $user->getPasswordHash();
+        $isValidPassword = password_verify($password, $storedPassword)
+            || hash_equals($storedPassword, $password);
 
         if (!$isValidPassword) {
             return $this->redirectToRoute('app_signin', ['error' => 1], 303);
         }
 
-        $request->getSession()->set('auth_user_id', (int) $user['id_user']);
+        $request->getSession()->set('auth_user_id', $user->getIdUser());
 
         return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
     }
 
-    #[Route('/template/index.html', name: 'app_template_index', methods: ['GET'])]
+    #[Route('/template/index.html.twig', name: 'app_template_index', methods: ['GET'])]
+    #[Route('/template/index.html', name: 'app_template_index_legacy', methods: ['GET'])]
     public function index(): RedirectResponse
     {
         return $this->redirectToRoute('app_template_page', ['page' => 'credit']);
     }
 
-    #[Route('/template/create-demande.html', name: 'app_create_demande_submit', methods: ['POST'])]
-    public function createDemandeSubmit(Request $request, Connection $connection): Response
+    #[Route('/template/credit-search.html.twig', name: 'app_credit_search_submit', methods: ['POST'])]
+    #[Route('/template/credit-search.html', name: 'app_credit_search_submit_legacy', methods: ['POST'])]
+    public function creditSearchSubmit(Request $request): RedirectResponse
     {
-        $userId = $request->getSession()->get('auth_user_id');
-        
-        if (!$userId) {
+        $userId = (int) $request->getSession()->get('auth_user_id', 0);
+        if (0 === $userId) {
             return $this->redirectToRoute('app_signin');
         }
 
-        // Récupérer et valider les données du formulaire
-        $montantDemande = (string) $request->request->get('montant_demande', '');
-        $dureeMois = (string) $request->request->get('duree_mois', '');
-        $tauxInteret = (string) $request->request->get('taux_interet', '');
-        $montantMensuel = (string) $request->request->get('montant_mensuel', '');
-        $objetCredit = trim((string) $request->request->get('objet_credit', ''));
-        $description = trim((string) $request->request->get('description', ''));
+        $data = new CreditSearchData();
+        $form = $this->createForm(CreditSearchType::class, $data);
+        $form->handleRequest($request);
 
-        // Valider les données
-        $errors = [];
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $this->addFlash('errorMessage', 'Recherche invalide.');
 
-        if ('' === $montantDemande || !is_numeric($montantDemande)) {
-            $errors[] = 'Montant invalide';
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        if (null === $data->search_duree) {
+            $request->getSession()->remove('credit_search_duree');
         } else {
-            $montantDemande = (float) $montantDemande;
-            if ($montantDemande < 100 || $montantDemande > 500000) {
-                $errors[] = 'Le montant doit être entre 100 et 500 000 DT';
-            }
+            $request->getSession()->set('credit_search_duree', (int) $data->search_duree);
         }
 
-        if ('' === $dureeMois || !is_numeric($dureeMois)) {
-            $errors[] = 'Durée invalide';
-        } else {
-            $dureeMois = (int) $dureeMois;
-            if ($dureeMois < 1 || $dureeMois > 360) {
-                $errors[] = 'La durée doit être entre 1 et 360 mois';
-            }
-        }
-
-        if ('' === $tauxInteret || !is_numeric($tauxInteret)) {
-            $errors[] = 'Taux invalide';
-        } else {
-            $tauxInteret = (float) $tauxInteret;
-            if ($tauxInteret < 0 || $tauxInteret > 50) {
-                $errors[] = 'Le taux doit être entre 0 et 50%';
-            }
-        }
-
-        if ('' === $objetCredit) {
-            $errors[] = 'Veuillez sélectionner un objet du crédit';
-        }
-
-        if ('' === $description || strlen($description) < 10 || strlen($description) > 500) {
-            $errors[] = 'La description doit contenir entre 10 et 500 caractères';
-        }
-
-        // Si erreurs, rediriger avec message d'erreur
-        if (!empty($errors)) {
-            return $this->render('inapp/create-demande.html.twig', [
-                'error' => implode(', ', $errors),
-                'success' => false,
-            ]);
-        }
-
-        try {
-            $connection->beginTransaction();
-
-            // 1. Créer un numéro de dossier unique
-            $numDossier = 'DOS-' . date('Ymd') . '-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
-            $now = new \DateTime();
-
-            // 2. Insérer dans dossier_client
-            $connection->insert('dossier_client', [
-                'id_user' => $userId,
-                'num_dossier' => $numDossier,
-                'montant_demande' => $montantDemande,
-                'status' => 0, // 0 = En attente
-                'created_at' => $now->format('Y-m-d H:i:s'),
-            ]);
-
-            $dossierId = $connection->lastInsertId();
-
-            // 3. Insérer dans credits
-            $connection->insert('credits', [
-                'id_dossier' => $dossierId,
-                'montant_credit' => $montantDemande,
-                'taux_interet' => $tauxInteret,
-                'duree_mois' => $dureeMois,
-                'montant_mensuel' => (float) $montantMensuel,
-                'created_at' => $now->format('Y-m-d H:i:s'),
-            ]);
-
-            $creditId = $connection->lastInsertId();
-
-            // 4. Générer les échéances
-            $dateEcheance = new \DateTime('first day of next month');
-            for ($i = 1; $i <= $dureeMois; ++$i) {
-                $connection->insert('echeance', [
-                    'id_credit' => $creditId,
-                    'num_echeance' => $i,
-                    'date_echeance' => $dateEcheance->format('Y-m-d'),
-                    'montant_echeance' => (float) $montantMensuel,
-                    'statut' => 'PENDING',
-                    'created_at' => $now->format('Y-m-d H:i:s'),
-                ]);
-
-                $dateEcheance->modify('+1 month');
-            }
-
-            $connection->commit();
-
-            // Retourner avec message de succès
-            return $this->render('inapp/create-demande.html.twig', [
-                'success' => true,
-                'error' => false,
-            ]);
-
-        } catch (\Exception $e) {
-            // Vérifier si une transaction est active avant de la rollback
-            if ($connection->isTransactionActive()) {
-                $connection->rollBack();
-            }
-
-            return $this->render('inapp/create-demande.html.twig', [
-                'error' => 'Erreur lors de la création de la demande: ' . $e->getMessage(),
-                'success' => false,
-            ]);
-        }
+        return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
     }
 
-    #[Route('/template/edit-demande/{id}.html', name: 'app_edit_demande', methods: ['GET'])]
-    public function editDemande(int $id, Request $request, Connection $connection): Response
+    #[Route('/template/credit-search-reset.html.twig', name: 'app_credit_search_reset', methods: ['GET'])]
+    #[Route('/template/credit-search-reset.html', name: 'app_credit_search_reset_legacy', methods: ['GET'])]
+    public function creditSearchReset(Request $request): RedirectResponse
     {
+        $userId = (int) $request->getSession()->get('auth_user_id', 0);
+        if (0 === $userId) {
+            return $this->redirectToRoute('app_signin');
+        }
+
+        $request->getSession()->remove('credit_search_duree');
+
+        return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+    }
+
+    #[Route('/template/create-demande.html.twig', name: 'app_create_demande_submit', methods: ['POST'])]
+    #[Route('/template/create-demande.html', name: 'app_create_demande_submit_legacy', methods: ['POST'])]
+    public function createDemandeSubmit(
+        Request $request,
+        EntityManagerInterface $em,
+    ): Response {
         $userId = $request->getSession()->get('auth_user_id');
-        
+
         if (!$userId) {
             return $this->redirectToRoute('app_signin');
         }
 
-        // Récupérer les données du dossier et du crédit
-        $data = $connection->fetchAssociative(
-            'SELECT 
-                d.id_dossier,
-                d.montant_demande,
-                d.num_dossier,
-                d.status,
-                c.id_credit,
-                c.taux_interet,
-                c.duree_mois,
-                c.montant_mensuel
-            FROM dossier_client d
-            LEFT JOIN credits c ON c.id_dossier = d.id_dossier
-            WHERE d.id_dossier = :id AND d.id_user = :userId
-            LIMIT 1',
-            ['id' => $id, 'userId' => $userId]
-        );
+        $data = new DossierCreditData();
+        $form = $this->createForm(DossierCreditType::class, $data);
+        $form->handleRequest($request);
 
-        if (!$data) {
-            throw $this->createNotFoundException('Demande non trouvée');
+        if ($form->isSubmitted() && $form->isValid()) {
+            $montantDemande = (float) $data->montant_demande;
+            $dureeMois      = (int)   $data->duree_mois;
+            $tauxInteret    = (float) $data->taux_interet;
+            $submissionFingerprint = hash('sha256', implode('|', [
+                (int) $userId,
+                number_format($montantDemande, 2, '.', ''),
+                $dureeMois,
+                number_format($tauxInteret, 2, '.', ''),
+                (string) $data->objet_credit,
+                trim((string) $data->description),
+            ]));
+
+            $lastCreateSubmission = $request->getSession()->get('create_demande_last_submission');
+            if (is_array($lastCreateSubmission)
+                && ($lastCreateSubmission['fingerprint'] ?? null) === $submissionFingerprint
+                && isset($lastCreateSubmission['timestamp'])
+                && (time() - (int) $lastCreateSubmission['timestamp']) < 30
+            ) {
+                $this->addFlash('successMessage', 'Votre demande de crédit a déjà été enregistrée.');
+
+                return $this->redirectToRoute('app_template_page', [
+                    'page' => 'create-demande',
+                ], 303);
+            }
+
+            // Mensualité calculée via méthode domaine (Credit::calculerMensualiteStatic)
+            $montantMensuel = Credit::calculerMensualiteStatic($montantDemande, $tauxInteret, $dureeMois);
+
+            try {
+                $now        = new \DateTime();
+                $numDossier = 'DOS-' . date('Ymd') . '-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+                // Entité DossierClient
+                $dossier = (new DossierClient())
+                    ->setIdUser((int) $userId)
+                    ->setNumDossier($numDossier)
+                    ->setMontantDemande((string) $montantDemande)
+                    ->setStatus(DossierClient::STATUS_ANALYSE)
+                    ->setCreatedAt($now);
+
+                $em->persist($dossier);
+
+                // Entité Credit liée au dossier
+                $credit = (new Credit())
+                    ->setDossier($dossier)
+                    ->setMontantCredit((string) $montantDemande)
+                    ->setTauxInteret((string) $tauxInteret)
+                    ->setDureeMois($dureeMois)
+                    ->setMontantMensuel((string) round($montantMensuel, 2))
+                    ->setCreatedAt($now);
+
+                $em->persist($credit);
+
+                // Une seule échéance initiale est créée à la soumission.
+                $dateEcheance = new \DateTime('first day of next month');
+                $echeance = (new Echeance())
+                    ->setCredit($credit)
+                    ->setNumEcheance(1)
+                    ->setDateEcheance($dateEcheance)
+                    ->setMontantEcheance((string) round($montantMensuel, 2))
+                    ->setStatut('Analyse')
+                    ->setCreatedAt($now);
+
+                $em->persist($echeance);
+
+                $em->flush();
+
+                $request->getSession()->set('create_demande_last_submission', [
+                    'fingerprint' => $submissionFingerprint,
+                    'timestamp' => time(),
+                ]);
+
+                $this->addFlash('successMessage', 'Votre demande de crédit a été créée avec succès.');
+
+                return $this->redirectToRoute('app_template_page', [
+                    'page' => 'create-demande',
+                ], 303);
+
+            } catch (\Exception $e) {
+                return $this->render('inapp/create-demande.html.twig', [
+                    'form'    => $form,
+                    'error'   => 'Erreur lors de la création de la demande: ' . $e->getMessage(),
+                    'success' => false,
+                ]);
+            }
         }
 
-        return $this->render('inapp/edit-demande.html.twig', [
-            'demande' => $data,
-            'error' => false,
+        return $this->render('inapp/create-demande.html.twig', [
+            'form'    => $form,
+            'error'   => false,
             'success' => false,
         ]);
     }
 
-    #[Route('/template/edit-demande/{id}.html', name: 'app_edit_demande_submit', methods: ['POST'])]
-    public function editDemandeSubmit(int $id, Request $request, Connection $connection): Response
+    #[Route('/template/edit-demande.html.twig', name: 'app_edit_demande', methods: ['GET'])]
+    #[Route('/template/edit-demande.html', name: 'app_edit_demande_legacy', methods: ['GET'])]
+    #[Route('/template/edit-demande/{id}.html.twig', name: 'app_edit_demande_open', methods: ['GET'])]
+    #[Route('/template/edit-demande/{id}.html', name: 'app_edit_demande_open_legacy', methods: ['GET'])]
+    public function editDemande(Request $request, EntityManagerInterface $em, CreditRepository $creditRepository, UserRepository $userRepository): Response
     {
-        $userId = $request->getSession()->get('auth_user_id');
-        
+        $session = $request->getSession();
+        $userId = $session->get('auth_user_id');
+        $idFromQuery = $request->query->getInt('id', 0);
+        $idFromPath = (int) $request->attributes->get('id', 0);
+        $id = $idFromQuery > 0 ? $idFromQuery : $idFromPath;
+
         if (!$userId) {
             return $this->redirectToRoute('app_signin');
         }
 
-        // Vérifier que le dossier appartient à l'utilisateur
-        $dossier = $connection->fetchAssociative(
-            'SELECT id_dossier FROM dossier_client WHERE id_dossier = :id AND id_user = :userId LIMIT 1',
-            ['id' => $id, 'userId' => $userId]
-        );
+        $user = $userRepository->find((int) $userId);
+        $isAdmin = 'ADMIN' === strtoupper((string) ($user?->getRole() ?? 'USER'));
 
-        if (!$dossier) {
+        // Normalize URL to /template/edit-demande.html while keeping selected dossier id in session.
+        if ($id > 0) {
+            $session->set('edit_demande_id', $id);
+            if ($idFromQuery > 0 || $idFromPath > 0) {
+                return $this->redirectToRoute('app_edit_demande', [], 303);
+            }
+        }
+
+        if ($id <= 0) {
+            $id = (int) $session->get('edit_demande_id', 0);
+        }
+
+        if ($id <= 0) {
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit']);
+        }
+
+        /** @var DossierClient|null $dossier */
+        $dossier = $em->find(DossierClient::class, $id);
+
+        if (!$dossier || (!$isAdmin && $dossier->getIdUser() !== (int) $userId)) {
             throw $this->createNotFoundException('Demande non trouvée');
         }
 
-        // Récupérer et valider les données
-        $montantDemande = (string) $request->request->get('montant_demande', '');
-        $dureeMois = (string) $request->request->get('duree_mois', '');
-        $tauxInteret = (string) $request->request->get('taux_interet', '');
-        $montantMensuel = (string) $request->request->get('montant_mensuel', '');
+        $credit = $creditRepository->findOneByDossierId($id);
+        $decisionStatus = $this->findCreditDecisionStatus($em->getConnection(), $credit?->getIdCredit());
 
-        // Valider les données
-        $errors = [];
+        $data = [
+            'id_dossier'      => $dossier->getIdDossier(),
+            'montant_demande' => $dossier->getMontantDemande(),
+            'num_dossier'     => $dossier->getNumDossier(),
+            'status'          => $dossier->getStatus(),
+            'decision_status' => $decisionStatus ?? DossierClient::normalizeStatus($dossier->getStatus()),
+            'id_credit'       => $credit?->getIdCredit(),
+            'taux_interet'    => $credit?->getTauxInteret(),
+            'duree_mois'      => $credit?->getDureeMois(),
+            'montant_mensuel' => $credit?->getMontantMensuel(),
+        ];
 
-        if ('' === $montantDemande || !is_numeric($montantDemande)) {
-            $errors[] = 'Montant invalide';
-        } else {
-            $montantDemande = (float) $montantDemande;
-            if ($montantDemande < 100 || $montantDemande > 500000) {
-                $errors[] = 'Le montant doit être entre 100 et 500 000 DT';
-            }
-        }
+        $editData = new EditDossierCreditData();
+        $editData->montant_demande = (float) $dossier->getMontantDemande();
+        $editData->duree_mois      = $credit?->getDureeMois();
+        $editData->taux_interet    = (float) ($credit?->getTauxInteret() ?? '13');
 
-        if ('' === $dureeMois || !is_numeric($dureeMois)) {
-            $errors[] = 'Durée invalide';
-        } else {
-            $dureeMois = (int) $dureeMois;
-            if ($dureeMois < 1 || $dureeMois > 360) {
-                $errors[] = 'La durée doit être entre 1 et 360 mois';
-            }
-        }
+        $form = $this->createForm(EditDossierCreditType::class, $editData);
 
-        if ('' === $tauxInteret || !is_numeric($tauxInteret)) {
-            $errors[] = 'Taux invalide';
-        } else {
-            $tauxInteret = (float) $tauxInteret;
-            if ($tauxInteret < 0 || $tauxInteret > 50) {
-                $errors[] = 'Le taux doit être entre 0 et 50%';
-            }
-        }
-
-        if (!empty($errors)) {
-            $data = $connection->fetchAssociative(
-                'SELECT d.id_dossier, d.montant_demande, d.num_dossier, d.status, 
-                        c.id_credit, c.taux_interet, c.duree_mois, c.montant_mensuel
-                 FROM dossier_client d
-                 LEFT JOIN credits c ON c.id_dossier = d.id_dossier
-                 WHERE d.id_dossier = :id',
-                ['id' => $id]
-            );
-
-            return $this->render('inapp/edit-demande.html.twig', [
-                'demande' => $data,
-                'error' => implode(', ', $errors),
-                'success' => false,
-            ]);
-        }
-
-        try {
-            $connection->beginTransaction();
-            $now = new \DateTime();
-
-            // Mettre à jour dossier_client
-            $connection->update('dossier_client', [
-                'montant_demande' => $montantDemande,
-                'updated_at' => $now->format('Y-m-d H:i:s'),
-            ], ['id_dossier' => $id]);
-
-            // Mettre à jour credits
-            $connection->update('credits', [
-                'montant_credit' => $montantDemande,
-                'taux_interet' => $tauxInteret,
-                'duree_mois' => $dureeMois,
-                'montant_mensuel' => (float) $montantMensuel,
-            ], ['id_dossier' => $id]);
-
-            $connection->commit();
-
-            // Récupérer les données mises à jour
-            $data = $connection->fetchAssociative(
-                'SELECT d.id_dossier, d.montant_demande, d.num_dossier, d.status, 
-                        c.id_credit, c.taux_interet, c.duree_mois, c.montant_mensuel
-                 FROM dossier_client d
-                 LEFT JOIN credits c ON c.id_dossier = d.id_dossier
-                 WHERE d.id_dossier = :id',
-                ['id' => $id]
-            );
-
-            return $this->render('inapp/edit-demande.html.twig', [
-                'demande' => $data,
-                'error' => false,
-                'success' => true,
-            ]);
-
-        } catch (\Exception $e) {
-            if ($connection->isTransactionActive()) {
-                $connection->rollBack();
-            }
-
-            $data = $connection->fetchAssociative(
-                'SELECT d.id_dossier, d.montant_demande, d.num_dossier, d.status, 
-                        c.id_credit, c.taux_interet, c.duree_mois, c.montant_mensuel
-                 FROM dossier_client d
-                 LEFT JOIN credits c ON c.id_dossier = d.id_dossier
-                 WHERE d.id_dossier = :id',
-                ['id' => $id]
-            );
-
-            return $this->render('inapp/edit-demande.html.twig', [
-                'demande' => $data,
-                'error' => 'Erreur lors de la modification: ' . $e->getMessage(),
-                'success' => false,
-            ]);
-        }
+        return $this->render('inapp/edit-demande.html.twig', [
+            'form'    => $form,
+            'demande' => $data,
+            'error'   => false,
+            'success' => false,
+        ]);
     }
 
-    #[Route('/template/delete-demande/{id}.html', name: 'app_delete_demande', methods: ['POST'])]
-    public function deleteDemande(int $id, Request $request, Connection $connection): RedirectResponse
+    #[Route('/template/edit-demande.html.twig', name: 'app_edit_demande_submit', methods: ['POST'])]
+    #[Route('/template/edit-demande.html', name: 'app_edit_demande_submit_legacy', methods: ['POST'])]
+    public function editDemandeSubmit(
+        Request $request,
+        EntityManagerInterface $em,
+        CreditRepository $creditRepository,
+        UserRepository $userRepository,
+    ): Response {
+        $session = $request->getSession();
+        $userId  = $session->get('auth_user_id');
+        $id      = $request->request->getInt('id', 0);
+
+        if (!$userId) {
+            return $this->redirectToRoute('app_signin');
+        }
+
+        $user = $userRepository->find((int) $userId);
+        $isAdmin = 'ADMIN' === strtoupper((string) ($user?->getRole() ?? 'USER'));
+
+        if ($id <= 0) {
+            $id = (int) $session->get('edit_demande_id', 0);
+        }
+
+        if ($id <= 0) {
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit']);
+        }
+
+        $session->set('edit_demande_id', $id);
+
+        /** @var DossierClient|null $dossier */
+        $dossier = $em->find(DossierClient::class, $id);
+
+        if (!$dossier || (!$isAdmin && $dossier->getIdUser() !== (int) $userId)) {
+            throw $this->createNotFoundException('Demande non trouvée');
+        }
+
+        $credit = $creditRepository->findOneByDossierId($id);
+        $decisionStatus = $this->findCreditDecisionStatus($em->getConnection(), $credit?->getIdCredit());
+
+        // Helper pour construire le tableau attendu par le template
+        $buildDataArray = static function (DossierClient $d, ?Credit $c, ?string $decisionStatus): array {
+            return [
+                'id_dossier'      => $d->getIdDossier(),
+                'montant_demande' => $d->getMontantDemande(),
+                'num_dossier'     => $d->getNumDossier(),
+                'status'          => $d->getStatus(),
+                'decision_status' => $decisionStatus ?? DossierClient::normalizeStatus($d->getStatus()),
+                'id_credit'       => $c?->getIdCredit(),
+                'taux_interet'    => $c?->getTauxInteret(),
+                'duree_mois'      => $c?->getDureeMois(),
+                'montant_mensuel' => $c?->getMontantMensuel(),
+            ];
+        };
+
+            $editData = new EditDossierCreditData();
+            $form = $this->createForm(EditDossierCreditType::class, $editData);
+            $form->handleRequest($request);
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                $montantDemande = (float) $editData->montant_demande;
+                $dureeMois      = (int)   $editData->duree_mois;
+                $tauxInteret    = (float) $editData->taux_interet;
+
+                // Recalcul de la mensualité via la méthode domaine
+                $montantMensuel = Credit::calculerMensualiteStatic($montantDemande, $tauxInteret, $dureeMois);
+
+                try {
+                    $now = new \DateTime();
+
+                    $dossier
+                        ->setMontantDemande((string) $montantDemande)
+                        ->setUpdatedAt($now);
+
+                    if (null !== $credit) {
+                        $credit
+                            ->setMontantCredit((string) $montantDemande)
+                            ->setTauxInteret((string) $tauxInteret)
+                            ->setDureeMois($dureeMois)
+                            ->setMontantMensuel((string) round($montantMensuel, 2));
+                    }
+
+                    $em->flush();
+
+                    return $this->render('inapp/edit-demande.html.twig', [
+                        'form'    => $form,
+                        'demande' => $buildDataArray($dossier, $credit),
+                        'error'   => false,
+                        'success' => true,
+                    ]);
+
+                } catch (\Exception $e) {
+                    return $this->render('inapp/edit-demande.html.twig', [
+                        'form'    => $form,
+                        'demande' => $buildDataArray($dossier, $credit, $decisionStatus),
+                        'error'   => 'Erreur lors de la modification: ' . $e->getMessage(),
+                        'success' => false,
+                    ]);
+                }
+            }
+
+            return $this->render('inapp/edit-demande.html.twig', [
+                'form'    => $form,
+                'demande' => $buildDataArray($dossier, $credit, $decisionStatus),
+                'error'   => false,
+                'success' => false,
+            ]);
+    }
+
+    #[Route('/template/retard-prediction.html.twig', name: 'app_retard_prediction', methods: ['GET', 'POST'])]
+    #[Route('/template/retard-prediction.html', name: 'app_retard_prediction_legacy', methods: ['GET', 'POST'])]
+    public function retardPrediction(
+        Request $request,
+        UserRepository $userRepository,
+        PaymentDelayChatbotService $chatbotService,
+    ): Response {
+        $userId = (int) $request->getSession()->get('auth_user_id', 0);
+        if (0 === $userId) {
+            return $this->redirectToRoute('app_signin');
+        }
+
+        $user = $userRepository->find($userId);
+        $isAdmin = 'ADMIN' === strtoupper((string) ($user?->getRole() ?? 'USER'));
+        if (!$isAdmin) {
+            $this->addFlash('errorMessage', 'Accès refusé: action réservée à l\'administrateur.');
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        $queryData = new RetardPredictionQueryData();
+        $form = $this->createForm(RetardPredictionQueryType::class, $queryData);
+        $form->handleRequest($request);
+
+        $prediction = null;
+        $targetUser = null;
+        $errorMessage = false;
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $search = trim((string) $queryData->query);
+            if ('' === $search) {
+                $errorMessage = 'Veuillez saisir un ID ou un email d\'utilisateur.';
+            } else {
+                $targetUser = ctype_digit($search)
+                    ? $userRepository->find((int) $search)
+                    : $userRepository->findOneBy(['email' => $search]);
+
+                if (null === $targetUser) {
+                    $errorMessage = 'Utilisateur introuvable. Vérifiez l\'ID ou l\'email.';
+                } else {
+                    $prediction = $chatbotService->analyzeUser(
+                        (int) $targetUser->getIdUser(),
+                        $targetUser->getRevenu(),
+                    );
+                }
+            }
+        }
+
+        return $this->render('inapp/retard-prediction.html.twig', [
+            'form' => $form->createView(),
+            'prediction' => $prediction,
+            'targetUser' => $targetUser,
+            'errorMessage' => $errorMessage,
+            'successMessage' => false,
+            'isAdmin' => $isAdmin,
+        ]);
+    }
+
+    #[Route('/template/delete-demande/{id}.html.twig', name: 'app_delete_demande', methods: ['POST'])]
+    #[Route('/template/delete-demande/{id}.html', name: 'app_delete_demande_legacy', methods: ['POST'])]
+    public function deleteDemande(int $id, Request $request, EntityManagerInterface $em, UserRepository $userRepository): RedirectResponse
     {
+        $deleteData = new DeleteDemandeData();
+        $form = $this->createForm(DeleteDemandeType::class, $deleteData);
+        $form->handleRequest($request);
+
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $this->addFlash('errorMessage', 'Requête de suppression invalide.');
+
+            return $this->redirectToRoute('app_template_page', [
+                'page' => 'credit',
+            ], 303);
+        }
+
+        $submittedId = (int) $deleteData->id;
+        if ($submittedId <= 0 || $submittedId !== $id) {
+            $this->addFlash('errorMessage', 'Identifiant de suppression invalide.');
+
+            return $this->redirectToRoute('app_template_page', [
+                'page' => 'credit',
+            ], 303);
+        }
+
         $userId = (int) $request->getSession()->get('auth_user_id', 0);
 
         if (0 === $userId) {
             return $this->redirectToRoute('app_signin');
         }
 
-        $dossier = $connection->fetchAssociative(
-            'SELECT id_dossier FROM dossier_client WHERE id_dossier = :id AND id_user = :userId LIMIT 1',
-            ['id' => $id, 'userId' => $userId]
-        );
+        $user = $userRepository->find($userId);
+        $isAdmin = 'ADMIN' === strtoupper((string) ($user?->getRole() ?? 'USER'));
 
-        if (!$dossier) {
+        /** @var DossierClient|null $dossier */
+        $dossier = $em->find(DossierClient::class, $id);
+
+        if (!$dossier || (!$isAdmin && $dossier->getIdUser() !== $userId)) {
+            $this->addFlash('errorMessage', 'Demande introuvable.');
+
             return $this->redirectToRoute('app_template_page', [
                 'page' => 'credit',
-                'errorMessage' => 'Demande introuvable.',
             ], 303);
         }
 
         try {
-            $connection->beginTransaction();
-
-            $echeanceIds = $connection->fetchFirstColumn(
-                'SELECT e.id_echeance
-                 FROM echeance e
-                 INNER JOIN credits c ON c.id_credit = e.id_credit
-                 WHERE c.id_dossier = :id',
-                ['id' => $id]
-            );
-
-            if (!empty($echeanceIds)) {
-                $placeholders = implode(',', array_fill(0, count($echeanceIds), '?'));
-
-                $connection->executeStatement(
-                    sprintf('DELETE FROM paiement WHERE id_echeance IN (%s)', $placeholders),
-                    $echeanceIds
-                );
-                $connection->executeStatement(
-                    sprintf('DELETE FROM retard WHERE id_echeance IN (%s)', $placeholders),
-                    $echeanceIds
-                );
-            }
-
-            $connection->executeStatement(
-                'DELETE e FROM echeance e INNER JOIN credits c ON c.id_credit = e.id_credit WHERE c.id_dossier = :id',
-                ['id' => $id]
-            );
-            $connection->executeStatement('DELETE FROM credits WHERE id_dossier = :id', ['id' => $id]);
-            $connection->executeStatement(
-                'DELETE FROM dossier_client WHERE id_dossier = :id AND id_user = :userId',
-                ['id' => $id, 'userId' => $userId]
-            );
-
-            $connection->commit();
+            $em->remove($dossier);
+            $em->flush();
         } catch (\Throwable $e) {
-            if ($connection->isTransactionActive()) {
-                $connection->rollBack();
-            }
+            $this->addFlash('errorMessage', 'Erreur suppression: ' . $e->getMessage());
 
             return $this->redirectToRoute('app_template_page', [
                 'page' => 'credit',
-                'errorMessage' => 'Erreur suppression: ' . $e->getMessage(),
             ], 303);
         }
 
         try {
-            // La reindexation utilise du DDL (ALTER TABLE), execute hors transaction.
-            $this->resequenceEspritWalletIds($connection);
+            // La reindexation utilise du DDL (ALTER TABLE), exécutée hors transaction.
+            $this->resequenceEspritWalletIds($em->getConnection());
         } catch (\Throwable $e) {
+            $this->addFlash('errorMessage', 'Suppression OK, reindexation echouee: ' . $e->getMessage());
+
             return $this->redirectToRoute('app_template_page', [
                 'page' => 'credit',
-                'errorMessage' => 'Suppression OK, reindexation echouee: ' . $e->getMessage(),
             ], 303);
         }
+
+        $this->addFlash('successMessage', 'Demande supprimée avec succès.');
 
         return $this->redirectToRoute('app_template_page', [
             'page' => 'credit',
-            'successMessage' => 'Demande supprimée avec succès.',
         ], 303);
     }
 
+    #[Route('/template/decision-demande/{id}.html.twig', name: 'app_decision_demande', methods: ['POST'])]
+    #[Route('/template/decision-demande/{id}.html', name: 'app_decision_demande_legacy', methods: ['POST'])]
+    public function decisionDemande(
+        int $id,
+        Request $request,
+        EntityManagerInterface $em,
+        CreditRepository $creditRepository,
+        UserRepository $userRepository,
+        CreditNotificationService $notificationService,
+    ): RedirectResponse {
+        $userId = (int) $request->getSession()->get('auth_user_id', 0);
+        if (0 === $userId) {
+            return $this->redirectToRoute('app_signin');
+        }
+
+        $user = $userRepository->find($userId);
+        $isAdmin = 'ADMIN' === strtoupper((string) ($user?->getRole() ?? 'USER'));
+        if (!$isAdmin) {
+            $this->addFlash('errorMessage', 'Accès refusé: action réservée à l\'administrateur.');
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        $decisionData = new DecisionDemandeData();
+        $form = $this->createForm(DecisionDemandeType::class, $decisionData);
+        $form->handleRequest($request);
+
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $this->addFlash('errorMessage', 'Requête de décision invalide.');
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        $submittedId = (int) $decisionData->id_dossier;
+        $newStatut = (string) $decisionData->statut;
+
+        if ($submittedId <= 0 || $submittedId !== $id) {
+            $this->addFlash('errorMessage', 'Identifiant de demande invalide.');
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        /** @var DossierClient|null $dossier */
+        $dossier = $em->find(DossierClient::class, $id);
+        if (!$dossier) {
+            $this->addFlash('errorMessage', 'Demande introuvable.');
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        $credit = $creditRepository->findOneByDossierId($id);
+        if (null === $credit) {
+            $this->addFlash('errorMessage', 'Aucun crédit associé à cette demande.');
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+
+        try {
+            $updatedRows = $em->getConnection()->executeStatement(
+                'UPDATE echeance SET statut = :statut WHERE id_credit = :idCredit',
+                [
+                    'statut' => $newStatut,
+                    'idCredit' => (int) $credit->getIdCredit(),
+                ]
+            );
+
+            if ($updatedRows <= 0) {
+                $this->addFlash('errorMessage', 'Aucune échéance mise à jour pour cette demande.');
+
+                return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+            }
+
+            $mappedStatus = DossierClient::mapDecisionToStatus($newStatut);
+            if (null !== $mappedStatus) {
+                $dossier->setStatus($mappedStatus);
+            }
+
+            $dossier->setUpdatedAt(new \DateTime());
+            $em->flush();
+
+            // Récupérer l'utilisateur propriétaire du dossier pour envoyer l'email
+            $requestUser = $userRepository->find($dossier->getIdUser());
+            if ($requestUser) {
+                try {
+                    if ('Accept' === $newStatut) {
+                        $notificationService->sendCreditApprovedNotification($requestUser, $dossier, $credit);
+                    } else {
+                        $notificationService->sendCreditRejectedNotification($requestUser, $dossier, $credit);
+                    }
+                } catch (\Throwable $emailError) {
+                    // Log l'erreur d'email mais ne bloque pas le flux
+                    error_log('Erreur lors de l\'envoi de l\'email de notification: ' . $emailError->getMessage());
+                }
+            }
+
+            $this->addFlash('successMessage', sprintf('Demande #%d %s.', $id, 'Accept' === $newStatut ? 'acceptée' : 'rejetée'));
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        } catch (\Throwable $e) {
+            $this->addFlash('errorMessage', 'Erreur lors de la mise à jour du statut: ' . $e->getMessage());
+
+            return $this->redirectToRoute('app_template_page', ['page' => 'credit'], 303);
+        }
+    }
+
     #[Route(
-        '/template/{page}.html',
+        '/template/{page}.html.twig',
         name: 'app_template_page',
         requirements: ['page' => 'credit|create-demande|signup'],
         methods: ['GET']
     )]
-    public function page(string $page, Request $request, Connection $connection): Response
+    #[Route(
+        '/template/{page}.html',
+        name: 'app_template_page_legacy',
+        requirements: ['page' => 'credit|create-demande|signup'],
+        methods: ['GET']
+    )]
+    public function page(
+        string $page,
+        Request $request,
+        DossierClientRepository $dossierClientRepository,
+        UserRepository $userRepository,
+    ): Response
     {
+        $userId = (int) $request->getSession()->get('auth_user_id', 0);
+        if (0 === $userId) {
+            return $this->redirectToRoute('app_signin');
+        }
+
+        $user = $userRepository->find($userId);
+        $isAdmin = 'ADMIN' === strtoupper((string) ($user?->getRole() ?? 'USER'));
+
+        $successMessage = trim((string) $request->query->get('successMessage', ''));
+        if ('' === $successMessage) {
+            $successMessage = (string) ($request->getSession()->getFlashBag()->get('successMessage')[0] ?? '');
+        }
+
+        $errorMessage = trim((string) $request->query->get('errorMessage', ''));
+        if ('' === $errorMessage) {
+            $errorMessage = (string) ($request->getSession()->getFlashBag()->get('errorMessage')[0] ?? '');
+        }
+
         $context = [
             'error' => false,
             'success' => false,
-            'successMessage' => trim((string) $request->query->get('successMessage', '')),
-            'errorMessage' => trim((string) $request->query->get('errorMessage', '')),
+            'successMessage' => $successMessage,
+            'errorMessage' => $errorMessage,
+            'isAdmin' => $isAdmin,
         ];
 
         if ('credit' === $page) {
-            $context['creditRows'] = $connection->fetchAllAssociative(
-                'SELECT
-                    d.id_dossier,
-                    d.montant_demande,
-                    d.status,
-                    d.created_at AS date_demande,
-                    c.montant_mensuel,
-                    c.duree_mois
-                FROM dossier_client d
-                LEFT JOIN credits c ON c.id_dossier = d.id_dossier
-                ORDER BY d.created_at DESC, d.id_dossier DESC'
-            );
+            $searchDureeSession = $request->getSession()->get('credit_search_duree');
+            $dureeMois = is_int($searchDureeSession)
+                ? $searchDureeSession
+                : (ctype_digit((string) $searchDureeSession) ? (int) $searchDureeSession : null);
+
+            $searchData = new CreditSearchData();
+            $searchData->search_duree = $dureeMois;
+
+            $context['searchForm'] = $this->createForm(CreditSearchType::class, $searchData)->createView();
+            $context['search_duree'] = null !== $dureeMois ? (string) $dureeMois : '';
+
+            $context['creditRows'] = $dossierClientRepository->findCreditRows($dureeMois, $userId, $isAdmin);
+
+            $context['deleteForms'] = [];
+            $context['decisionForms'] = [];
+            foreach ($context['creditRows'] as $row) {
+                $idDossier = (int) ($row['id_dossier'] ?? 0);
+                if ($idDossier <= 0) {
+                    continue;
+                }
+
+                $deleteData = new DeleteDemandeData();
+                $deleteData->id = $idDossier;
+                $context['deleteForms'][$idDossier] = $this->createForm(DeleteDemandeType::class, $deleteData)->createView();
+
+                if ($isAdmin) {
+                    $acceptData = new DecisionDemandeData();
+                    $acceptData->id_dossier = $idDossier;
+                    $acceptData->statut = 'Accept';
+
+                    $rejectData = new DecisionDemandeData();
+                    $rejectData->id_dossier = $idDossier;
+                    $rejectData->statut = 'Rejet';
+
+                    $context['decisionForms'][$idDossier]['Accept'] = $this->createForm(DecisionDemandeType::class, $acceptData)->createView();
+                    $context['decisionForms'][$idDossier]['Rejet'] = $this->createForm(DecisionDemandeType::class, $rejectData)->createView();
+                }
+            }
+        }
+
+        if ('create-demande' === $page) {
+            $context['form'] = $this->createForm(DossierCreditType::class, new DossierCreditData());
         }
 
         $response = $this->render(sprintf('inapp/%s.html.twig', $page), $context);
@@ -507,6 +775,24 @@ final class TemplateController extends AbstractController
         } finally {
             $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
         }
+    }
+
+    private function findCreditDecisionStatus(Connection $connection, ?int $creditId): ?string
+    {
+        if (null === $creditId || $creditId <= 0) {
+            return null;
+        }
+
+        $status = $connection->fetchOne(
+            'SELECT e.statut
+             FROM echeance e
+             WHERE e.id_credit = :idCredit
+             ORDER BY e.num_echeance ASC, e.id_echeance ASC
+             LIMIT 1',
+            ['idCredit' => $creditId]
+        );
+
+        return false === $status ? null : (string) $status;
     }
 
     private function resequencePrimaryKey(Connection $connection, string $table, string $primaryKey, string $mapTable): void

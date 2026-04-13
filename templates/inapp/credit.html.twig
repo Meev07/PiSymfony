@@ -23,18 +23,21 @@
   <!-- SIDEBAR -->
   <aside id="sidebar" class="sidebar">
      <div class="logo-area">
-      <a href="index.html" class="d-inline-flex lh-sm">
+      <a href="{{ path('app_template_page', {'page': 'credit'}) }}" class="d-inline-flex lh-sm">
         <span class="fw-bold fs-5 text-primary">Esprit Wallet</span>
       </a>
     </div>
     <ul class="nav flex-column">
       <li class="px-4 py-2"><small class="nav-text">Main</small></li>
-      <li><a class="nav-link" href="credit.html"><i class="ti ti-box-seam"></i><span
+      <li><a class="nav-link" href="{{ path('app_template_page', {'page': 'credit'}) }}"><i class="ti ti-box-seam"></i><span
         class="nav-text">Credit</span></a></li>
-      <li><a class="nav-link" href="create-demande.html"><i class="ti ti-plus"></i><span class="nav-text">Ajouter
+      <li><a class="nav-link" href="{{ path('app_template_page', {'page': 'create-demande'}) }}"><i class="ti ti-plus"></i><span class="nav-text">Ajouter
         demande</span></a></li>
+      {% if isAdmin|default(false) %}
+      <li><a class="nav-link" href="{{ path('app_retard_prediction') }}"><i class="ti ti-robot"></i><span class="nav-text">Chatbot Retard</span></a></li>
+      {% endif %}
 
-  <li><a class="nav-link" href="signin.html"><i class="ti ti-logout"></i><span class="nav-text">Log out</span></a></li>
+  <li><a class="nav-link" href="{{ path('app_signin') }}"><i class="ti ti-logout"></i><span class="nav-text">Log out</span></a></li>
     </ul>
 
   </aside>
@@ -62,13 +65,36 @@
               <p class="mb-0">Consulter vos demandes de credit</p>
             </div>
             <div>
-              <a href="create-demande.html" class="btn btn-primary">Ajouter demande</a>
+              <a href="{{ path('app_template_page', {'page': 'create-demande'}) }}" class="btn btn-primary">Ajouter demande</a>
             </div>
           </div>
         </div>
       </div>
       <div class="row">
         <div class="col-12">
+          {{ form_start(searchForm, {
+            action: path('app_credit_search_submit'),
+            attr: {
+              class: 'card p-3 mb-3',
+              novalidate: 'novalidate'
+            }
+          }) }}
+            <div class="row g-2 align-items-end">
+              <div class="col-12 col-md-4">
+                {{ form_label(searchForm.search_duree) }}
+                {{ form_widget(searchForm.search_duree) }}
+              </div>
+              <div class="col-12 col-md-auto">
+                {{ form_widget(searchForm.rechercher) }}
+              </div>
+              {% if search_duree|default('') is not empty %}
+              <div class="col-12 col-md-auto">
+                <a href="{{ path('app_credit_search_reset') }}" class="btn btn-outline-secondary w-100">Réinitialiser</a>
+              </div>
+              {% endif %}
+            </div>
+          {{ form_end(searchForm) }}
+
           <div class="card table-responsive ">
             <table class="table mb-0 text-nowrap table-hover">
               <thead class="table-light border-light">
@@ -87,15 +113,46 @@
                   <td>{{ row.montant_demande is not null ? row.montant_demande|number_format(2, '.', ' ') ~ ' DT' : '-' }}</td>
                   <td>{{ row.montant_mensuel is not null ? row.montant_mensuel|number_format(2, '.', ' ') ~ ' DT' : '-' }}</td>
                   <td>{{ row.duree_mois is not null ? row.duree_mois ~ ' mois' : '-' }}</td>
-                  <td>{{ row.status ?? '-' }}</td>
+                  <td>{{ row.echeance_statut ?? '-' }}</td>
                   <td>{{ row.date_demande is not null ? row.date_demande|date('Y-m-d H:i') : '-' }}</td>
                   <td class="d-flex align-items-center gap-2">
-                    <a href="{{ path('app_edit_demande', {'id': row.id_dossier}) }}" class=""><i class="ti ti-edit "></i></a>
-                    <form method="post" action="{{ path('app_delete_demande', {'id': row.id_dossier}) }}" onsubmit="return confirm('Confirmer la suppression de cette demande ?');" class="m-0">
+                    {% if isAdmin|default(false) %}
+                    {{ form_start(decisionForms[row.id_dossier]['Accept'], {
+                      action: path('app_decision_demande', {'id': row.id_dossier}),
+                      attr: { class: 'm-0' }
+                    }) }}
+                      {{ form_widget(decisionForms[row.id_dossier]['Accept'].id_dossier) }}
+                      {{ form_widget(decisionForms[row.id_dossier]['Accept'].statut) }}
+                      <button type="submit" class="btn btn-sm btn-outline-success" title="Accepter">
+                        Accepter
+                      </button>
+                    {{ form_end(decisionForms[row.id_dossier]['Accept']) }}
+
+                    {{ form_start(decisionForms[row.id_dossier]['Rejet'], {
+                      action: path('app_decision_demande', {'id': row.id_dossier}),
+                      attr: { class: 'm-0' }
+                    }) }}
+                      {{ form_widget(decisionForms[row.id_dossier]['Rejet'].id_dossier) }}
+                      {{ form_widget(decisionForms[row.id_dossier]['Rejet'].statut) }}
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Rejeter">
+                        Rejeter
+                      </button>
+                    {{ form_end(decisionForms[row.id_dossier]['Rejet']) }}
+                    {% endif %}
+
+                    <a href="{{ path('app_edit_demande_open', {'id': row.id_dossier}) }}" class=""><i class="ti ti-edit "></i></a>
+                    {{ form_start(deleteForms[row.id_dossier], {
+                      action: path('app_delete_demande', {'id': row.id_dossier}),
+                      attr: {
+                        class: 'm-0',
+                        onsubmit: "return confirm('Confirmer la suppression de cette demande ?');"
+                      }
+                    }) }}
+                      {{ form_widget(deleteForms[row.id_dossier].id) }}
                       <button type="submit" class="btn p-0 border-0 bg-transparent link-danger" aria-label="Supprimer">
                         <i class="ti ti-trash"></i>
                       </button>
-                    </form>
+                    {{ form_end(deleteForms[row.id_dossier]) }}
                   </td>
                 </tr>
                 {% else %}
